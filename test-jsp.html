@@ -1,0 +1,175 @@
+																																																																																																									<html>
+ <head>
+	<meta http-equiv="content-type" content="text/html; charset=utf-8">
+ 	<title>Test jsPrintSetup WE</title>
+<style>
+	body {font-family:verdana,arial;font-size:10pt;background:white;} 
+	div {width:600px;border:3px solid #ccc;padding:3px;}
+	.button {
+    font: bold 20px Arial;
+    text-decoration: none;
+    background-color: #EEEEEE;
+    color: #333333;
+    padding: 2px 6px 2px 6px;
+    border-top: 1px solid #CCCCCC;
+    border-right: 1px solid #333333;
+    border-bottom: 1px solid #333333;
+    border-left: 1px solid #CCCCCC;
+  }
+</style>
+<script type="text/javascript">
+//window.jsPrintSetup.permissions();
+/*
+var x = window.jsPrintSetup.testAsync();
+console.log("typeof(x)="+typeof(x));
+x.then(
+  (res) => {console.log("OK:"+res);}
+  , (fail) => {console.log("fail:"+fail);}
+);
+*/
+
+function checkJobInfo(win, jobId) {
+  var jobInfo = win.jsPrintSetup.getJobInfo(jobId);
+  if (jobInfo) {
+  //  jobInfo_1 = JSON.parse(jobInfo);
+    console.log("----- job info:"+JSON.stringify(jobInfo));
+  } else
+    console.log("----- Can't find jobInfo for jobId:"+jobId);
+}
+
+var printSettings = {
+    "printSilent": true
+//    , "showPrintProgress": false
+//    , "outputFormat": this.kOutputFormatPDF
+//    , "printToFile": true
+//    , "toFileName": "/home/mitko/test.pdf"
+    , "printerName" : "PDF" // "Virtual_PDF_Printer"
+};
+
+function printWindow(win, what) {
+  // jsPrintSetup messages  
+  win.addEventListener("message", function(event) {
+    console.log('event.data:'+JSON.stringify(event.data));
+    if (event.source == win 
+        && event.data.source && event.data.source == "jsPrintSetup"
+        ) {
+      if (event.data.message == "job_start") {  
+        console.log(what+" Job "+event.data.jobId+" started");
+      } else if (event.data.message == "job_progress") {
+        console.log(what+" Job "+event.data.jobId+" progress:"+event.data.progress);
+      } else if (event.data.message == "job_error") {
+        console.log(what+" Job "+event.data.jobId+" error:"+event.data.statusMessage);
+      } else if (event.data.message == "job_rejected") {
+        console.log(what+" Job "+event.data.jobId+" rejected.");
+      } else if (event.data.message == "job_submited") {
+        console.log(what+" Job "+event.data.jobId+" submited.");
+      } else if (event.data.message == "job_complete") {
+        console.log(what+" Job "+event.data.jobId+" completed.");
+      } else {
+        console.log(what+" Unknown message:"+event.data.message);
+      }
+    }
+  });
+  win.jsPrintSetup.print(printSettings).then(
+    (jobId) => {
+      console.log(what+" Print job for submitted with id:"+jobId);
+      checkJobInfo(win,jobId);
+//        checkJobInfo(window,jobId); also for main window?
+      setTimeout(() => {checkJobInfo(win,jobId);}, 5000);
+    }
+    , (err) => {
+      console.log(what+" Pint job rejected:"+err);
+    }
+  );
+} //printWindow
+
+function getPrintersList() {
+  window.jsPrintSetup.getPrintersList().then(
+    (printers) => {
+      document.getElementById("taResult").value = printers.join("\n");
+    }
+    , (error) => {
+      document.getElementById("taResult").value = error;
+    }
+  );
+} // getPrintersList
+
+function getPrintSettings() {
+  let printerName = null; //"non existent printer";
+  window.jsPrintSetup.getPrintSettings(printerName).then(
+    (printSettings) => {
+      document.getElementById("taResult").value = JSON.stringify(printSettings);
+    }
+    , (error) => {
+      document.getElementById("taResult").value = error;
+    }
+  );
+} // getPrintSettings
+
+function getGlobalPrintSettings() {
+  window.jsPrintSetup.getGlobalPrintSettings().then(
+    (printSettings) => {
+      document.getElementById("taResult").value = JSON.stringify(printSettings);
+    }
+    , (error) => {
+      document.getElementById("taResult").value = error;
+    }
+  );
+} // getGlobalPrintSettings
+
+function savePrintSettings() {
+  let printSettings = {
+    printerName:"Virtual_PDF_Printer"
+    , headerStrLeft: "Left Ala"
+    , headerStrCenter: "Center Ala"
+    , headerStrRight: "Right Ala"
+  };
+  window.jsPrintSetup.savePrintSettings(printSettings, jsPrintSetup.kSaveHeaderCenter, false).then(
+    (printSettings) => {
+      document.getElementById("taResult").value = JSON.stringify(printSettings);
+    }
+    , (error) => {
+      document.getElementById("taResult").value = error;
+    }
+  );
+} // savePrintSettings
+
+function getDefaultPrinterName() {
+  window.jsPrintSetup.getDefaultPrinterName().then(
+    (printerName) => {
+      document.getElementById("taResult").value = printerName
+    }
+    , (error) => {
+      document.getElementById("taResult").value = error;
+    }
+  );
+} // getDefaultPrinterName
+
+	
+</script>	 
+</head>
+<body>
+	<center>
+	<div>
+ The document starts here ...<br/>
+ This is test<br/>
+ This is test<br/>
+ This is test<br/>
+	<br/><br/>
+  <a class="button" href="#" OnClick="printWindow(window, 'Main');">Print main window</a>
+  <a class="button" href="#" OnClick="printWindow(window.frames[0], 'Frame 1');">Print frame 1</a>
+  <a class="button" href="#" OnClick="printWindow(window.frames[1], 'Frame 2');">Print frame 2</a>
+	</div>
+	</center>
+<iframe id="if1" src="test-jsp-f1.html"> </iframe>	
+<iframe id="if2" src="test-jsp-f2.html"> </iframe>	
+<p>
+  <a class="button" href="#" OnClick="getPrintersList();">Get list of printers</a>
+  <a class="button" href="#" OnClick="getPrintSettings();">Get print settings</a>
+  <a class="button" href="#" OnClick="getGlobalPrintSettings();">Get Global print settings</a>
+  <a class="button" href="#" OnClick="getDefaultPrinterName();">Get default printer</a>
+  <a class="button" href="#" OnClick="savePrintSettings();">Save print settings</a>
+</p>
+<textarea id="taResult" cols="150" rows="15"></textarea>
+</body>
+</html>

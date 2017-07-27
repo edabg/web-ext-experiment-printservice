@@ -1,0 +1,3 @@
+#!/bin/sh
+rm printservice.xpi
+zip printservice.xpi api.js install.rdf schema.json

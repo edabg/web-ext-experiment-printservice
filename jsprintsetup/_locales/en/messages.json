@@ -1,0 +1,59 @@
+{
+  "extensionName": {
+    "message": "jsPrintSetup WE",
+    "description": "Name of the extension."
+  },
+
+  "extensionDescription": {
+    "message": "jsPrintSetup Webextension",
+    "description": "Description of the extension."
+  },
+
+  "jsp_Options": {
+    "message": "jsPrintSetup Options"
+  },
+
+  "jsp_SecurityMode": {
+    "message": "Security Mode"
+  },
+  
+  "jsp_PromptForAccess": {
+    "message": "Prompt for access if site is not in Allowed/Blocked list"
+  },
+
+  "jsp_AccessFromEnabled": {
+    "message": "Enable access ONLY from enabled sites"
+  },
+
+  "jsp_AccessFromAll": {
+    "message": "Enable access from all sites (not recommended)"
+  },
+
+  "jsp_Behavior": {
+    "message": "Behavior"
+  },
+
+  "jsp_EnableAccessFromLocal": {
+    "message": "Enable access from local files (file:///)"
+  },
+
+  "jsp_EnableRequestFromBlocked": {
+    "message": "Enable request access from blocked sites"
+  },
+
+  "jsp_Permissions": {
+    "message": "Permissions"
+  },
+  
+  "jsp_SitePermissions": {
+    "message": "Site Permissions"
+  },
+
+  "jsp_Save": {
+    "message": "Save"
+  },
+  
+  "jsp_Saved": {
+    "message": "Saved"
+  }
+}

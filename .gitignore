@@ -1,0 +1,5 @@
+*~
+*.xpi
+*.zip
+/webext-experiment-hello-master
+/*/web-ext-artifacts

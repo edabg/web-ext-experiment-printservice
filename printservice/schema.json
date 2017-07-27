@@ -1,0 +1,559 @@
+[
+  {
+    "namespace": "printservice",
+    "description": "Print Service API",
+    "permissions": ["experiments.printservice"],
+    "functions": [
+      {
+        "name": "hello",
+        "type": "function",
+        "description": "Returns the string \"Hello, world\"",
+        "async": true,
+        "parameters": []
+      },
+      {
+        "name": "printTab",
+        "type": "function",
+        "description": "print tab by tabId, optional window id or current tab window with specified settings.",
+        "async": "callback",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "tabId",
+            "optional": true,
+            "description": "Tab id to be printed or current."          	
+          },
+          {
+            "type": "integer",
+            "name": "frameId",
+            "optional": true,
+            "description": "frameId to be printed or main window."          	
+          },
+          {
+            "name": "printSettings",
+            "$ref" : "PrintSettings",
+            "optional": true,
+            "description": "Print settings."          	
+          },
+          {
+            "type": "function",
+            "name": "callback",
+            "optional": true,
+            "description": "Called after browser print method is called.",
+            "parameters": [
+              {
+                "name": "printJobInfo",
+                "type": "object",
+                "optional": true,
+                "properties" : {
+                    "jobId":{
+                      "type": "integer",
+                      "description" : "The id of processed print job."
+                    },
+                    "status":{
+                      "type": "string",
+                      "description": "Status: TODO:???."
+                    }
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "listPrinters",
+        "type": "function",
+        "description": "Returns list of available printers.",
+        "async": "callback",
+        "parameters": [
+          {
+            "type": "function",
+            "name": "callback",
+            "parameters": [
+              {
+                "name": "result",
+                "type": "array",
+                "items": {
+                  "type" : "string"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "getDefaultPrinterName",
+        "type": "function",
+        "description": "Returns the name of default printer.",
+        "async": "callback",
+        "parameters": [
+          {
+            "type": "function",
+            "name": "callback",
+            "parameters": [
+              {
+                "name": "result",
+                "type": "string"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "getGlobalPrintSettings",
+        "type": "function",
+        "description": "Returns global print settings.",
+        "async": "callback",
+        "parameters": [
+          {
+            "type": "function",
+            "name": "callback",
+            "parameters": [
+              {
+                "name": "result",
+                "$ref": "PrintSettings"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "getPrintSettings",
+        "type": "function",
+        "description": "Returns print settings for printer. If printerName is null, settings for default printer will be returned.",
+        "async": "callback",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "printerName",
+            "optional": true,
+            "description": "Printer name."          	
+          },
+          {
+            "type": "function",
+            "name": "callback",
+            "parameters": [
+              {
+                "name": "result",
+                "$ref": "PrintSettings"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "savePrintSettings",
+        "type": "function",
+        "description": "Save print settings for printer and return them.",
+        "async": "callback",
+        "parameters": [
+          {
+            "$ref": "PrintSettings",
+            "name": "printSettings",
+            "optional": false,
+            "description": "Print settings."          	
+          },
+          {
+            "type": "integer",
+            "name": "optionSet",
+            "optional": true,
+            "description": "Options to save."          	
+          },
+          {
+            "type": "boolean",
+            "name": "setDefaultPrinterName",
+            "optional": true,
+            "description": "Sets default printer name to that printer."          	
+          },
+          {
+            "type": "function",
+            "name": "callback",
+            "parameters": [
+              {
+                "name": "result",
+                "$ref": "PrintSettings"
+              }
+            ]
+          }
+        ]
+      }
+      
+    ],
+    "types" : [
+      {
+        "id": "PrintSettings",
+        "type": "object",
+        "description": "The page settings including: orientation, scale, background, margins, headers, footers.",
+        "properties": {
+          "printerName": {
+            "type": "string",
+            "optional": true,
+            "description": "Name of destination printer."
+          },
+          "orientation": {
+            "type": "integer",
+            "optional": true,
+            "description": "The page content orientation: 0 = portrait, 1 = landscape. Default: 0."
+          },
+          "scaling": {
+            "type": "number",
+            "optional": true,
+            "description": "The page content scaling factor: 1.0 = 100% = normal size. Default: 1.0."
+          },
+          "shrinkToFit": {
+            "type": "boolean",
+            "optional": true,
+            "description": "Whether the page content should shrink to fit the page width (overrides scaling). Default: true."
+          },
+          "printBGColors": {
+            "type": "boolean",
+            "optional": true,
+            "description": "Whether the page background colors should be shown. Default: false."
+          },
+          "printBGImages": {
+            "type": "boolean",
+            "optional": true,
+            "description": "Whether the page background images should be shown. Default: false."
+          },
+          "printInColor": {
+            "type": "boolean",
+            "optional": true,
+            "description": "Print in color. false means in grayscale. Default: true."
+          },
+          "printReversed": {
+            "type": "boolean",
+            "optional": true,
+            "description": "Print pages in reverse order. Default: false."
+          },
+          "printSilent": {
+            "type": "boolean",
+            "optional": true,
+            "description": "Silent printing. Default: false."
+          },
+          "showPrintProgress": {
+            "type": "boolean",
+            "optional": true,
+            "description": "Show print progress. Default: true."
+          },
+          "printToFile": {
+            "type": "boolean",
+            "optional": true,
+            "description": "Print to file. Default: false."
+          },
+          "toFileName": {
+            "type": "string",
+            "optional": true,
+            "description": "Output file name in cas of 'printToFile'."
+          },
+          "resolution": {
+            "type": "integer",
+            "optional": true,
+            "description": "print resolution (dpi)."
+          },
+          "printPageDelay": {
+            "type": "integer",
+            "optional": true,
+            "description": "Print page delay in milliseconds."
+          },
+          "duplex": {
+            "type": "integer",
+            "optional": true,
+            "description": "Duplex mode."
+          },
+          "numCopies": {
+            "type": "integer",
+            "optional": true,
+            "description": "The number of copies. Default: 1."
+          },
+          "howToEnableFrameUI": {
+            "type": "integer",
+            "optional": true,
+            "description": "0 = kFrameEnableNone, 1 = kFrameEnableAll, 2 = kFrameEnableAsIsAndEach. Default: 0."
+          },
+          "printFrameTypeUsage": {
+            "type": "integer",
+            "optional": true,
+            "description": "0 = kUseInternalDefault, 1 = kUseSettingWhenPossible. Default: 0."
+          },
+          "printFrameType": {
+            "type": "integer",
+            "optional": true,
+            "description": "0 = kNoFrames, 1 = kFramesAsIs, 2 = kSelectedFrame, 3 = kEachFrameSep. Default: 0."
+          },
+          "printRange": {
+            "type": "integer",
+            "optional": true,
+            "description": "What content to print 0 = print all pages, 1 = print specified range between startPageRange and endPageRange, 2 = print selection, 3 = print focused frame. Default: 0."
+          },
+          "startPageRange": {
+            "type": "integer",
+            "optional": true,
+            "description": "Start page of range when 'printRange = 1'"
+          },
+          "endPageRange": {
+            "type": "integer",
+            "optional": true,
+            "description": "End page of range when 'printRange = 1'"
+          },
+          "paperName": {
+            "type": "string",
+            "optional": true,
+            "description": "The name of paper (for some platforms like Linux)."
+          },
+          "paperData": {
+            "type": "integer",
+            "optional": true,
+            "description": "The id of paper (for some platforms like Windows)."
+          },
+          "paperSizeUnit": {
+            "type": "integer",
+            "optional": true,
+            "description": "The page size unit: 0 = inches, 1 = millimeters. Default: 0."
+          },
+          "paperWidth": {
+            "type": "number",
+            "optional": true,
+            "description": "The paper width in paper size units. Default: 8.5."
+          },
+          "paperHeight": {
+            "type": "number",
+            "optional": true,
+            "description": "The paper height in paper size units. Default: 11.0."
+          },
+          "outputFormat": {
+            "type": "integer",
+            "optional": true,
+            "description": "Print output format. 0 = Native format, 1 = Postscript, 2 = PDF. Default: 0."
+          },
+          "title": {
+            "type": "string",
+            "optional": true,
+            "description": "The title of page."
+          },
+          "docURL": {
+            "type": "string",
+            "optional": true,
+            "description": "The document URL."
+          },
+          "headerStrLeft": {
+            "type": "string",
+            "optional": true,
+            "description": "The text for the page's left header. Default: '&T'."
+          },
+          "headerStrCenter": {
+            "type": "string",
+            "optional": true,
+            "description": "The text for the page's center header. Default: ''."
+          },
+          "headerStrRight": {
+            "type": "string",
+            "optional": true,
+            "description": "The text for the page's right header. Default: '&U'."
+          },
+          "footerStrLeft": {
+            "type": "string",
+            "optional": true,
+            "description": "The text for the page's left footer. Default: '&PT'."
+          },
+          "footerStrCenter": {
+            "type": "string",
+            "optional": true,
+            "description": "The text for the page's center footer. Default: ''."
+          },
+          "footerStrRight": {
+            "type": "string",
+            "optional": true,
+            "description": "The text for the page's right footer. Default: '&D'."
+          },
+          "unwriteableMarginLeft": {
+            "type": "number",
+            "optional": true,
+            "description": "The unwriteable margin between the printable area and the left edge of the paper (inches). Default: 0."
+          },
+          "unwriteableMarginRight": {
+            "type": "number",
+            "optional": true,
+            "description": "The unwriteable margin between the printable area and the right edge of the paper (inches). Default: 0."
+          },
+          "unwriteableMarginTop": {
+            "type": "number",
+            "optional": true,
+            "description": "The unwriteable margin between the printable area and the top edge of the paper (inches). Default: 0."
+          },
+          "unwriteableMarginBottom": {
+            "type": "number",
+            "optional": true,
+            "description": "The unwriteable margin between the printable area and the bottom edge of the paper (inches). Default: 0."
+          },
+          "edgeLeft": {
+            "type": "number",
+            "optional": true,
+            "description": "The offset between header/footer and the left unwriteable margin (inches). Default: 0.3."
+          },
+          "edgeRight": {
+            "type": "number",
+            "optional": true,
+            "description": "The offset between header/footer and the right unwriteable margin (inches). Default: 0.3."
+          },
+          "edgeTop": {
+            "type": "number",
+            "optional": true,
+            "description": "The offset between header and the top unwriteable margin (inches). Default: 0.3."
+          },
+          "edgeBottom": {
+            "type": "number",
+            "optional": true,
+            "description": "The offset between footer and the bottom unwriteable margin (inches). Default: 0.3."
+          },
+          "marginLeft": {
+            "type": "number",
+            "optional": true,
+            "description": "The margin between the page content and the left unwriteable margin (inches). Default: 0.5."
+          },
+          "marginRight": {
+            "type": "number",
+            "optional": true,
+            "description": "The margin between the page content and the right unwriteable margin (inches). Default: 0.5."
+          },
+          "marginTop": {
+            "type": "number",
+            "optional": true,
+            "description": "The margin between the page content and the top unwriteable margin (inches). Default: 0.5."
+          },
+          "marginBottom": {
+            "type": "number",
+            "optional": true,
+            "description": "The margin between the page content and the bottom unwriteable margin (inches). Default: 0.5."
+          }
+        } 
+      }  
+    ],
+    "events": [
+      {
+        "name": "onStateChange",
+        "type": "function",
+        "description": "Fires when onStateChange is occured",
+        "parameters": [
+          {
+            "name": "data",
+            "type": "object",
+            "properties": {
+              "jobId": {
+                "description": "The <code>id</code> of the print job that state was changed.",
+                "optional": true,
+                "type": "integer"
+              },
+              "tabId": {
+                "description": "The <code>id</code> of tab initiated print job.",
+                "optional": true,
+                "type": "integer"
+              },
+              "frameId": {
+                "description": "The <code>id</code> of frame initiated print job.",
+                "optional": true,
+                "type": "integer"
+              },
+              "stateFlags": {
+                "description": "Flags indicating the new state. This value is a combination of one of the State Transition Flags and one or more of the State Type Flags defined above. Any undefined bits are reserved for future use.",
+                "optional": true,
+                "type": "integer"
+              },
+              "status": {
+                "description": "Error status code associated with the state change. This parameter should be ignored unless aStateFlags includes the STATE_STOP bit. The status code indicates success or failure of the request associated with the state change.",
+                "optional": true,
+                "type": "integer"
+              }
+            }
+          }
+        ]           
+      },     
+      {
+        "name": "onProgressChange",
+        "type": "function",
+        "description": "Fires when onProgressChange is occured",
+        "parameters": [
+          {
+            "name": "data",
+            "type": "object",
+            "properties": {
+              "jobId": {
+                "description": "The <code>id</code> of the print job that state was changed.",
+                "optional": true,
+                "type": "integer"
+              }, 
+              "tabId": {
+                "description": "The <code>id</code> of tab initiated print job.",
+                "optional": true,
+                "type": "integer"
+              },
+              "frameId": {
+                "description": "The <code>id</code> of frame initiated print job.",
+                "optional": true,
+                "type": "integer"
+              },
+              "curSelfProgress": {
+                "description": "The current progress for aRequest.",
+                "optional": true,
+                "type": "integer"
+              },
+              "maxSelfProgress": {
+                "description": "The maximum progress for aRequest.",
+                "optional": true,
+                "type": "integer"
+              },
+              "curTotalProgress": {
+                "description": "The current progress for all requests associated with aWebProgress.",
+                "optional": true,
+                "type": "integer"
+              },
+              "maxTotalProgress": {
+                "description": "The total progress for all requests associated with aWebProgress.",
+                "optional": true,
+                "type": "integer"
+              }
+            }
+          }
+        ]           
+      },     
+      {
+        "name": "onStatusChange",
+        "type": "function",
+        "description": "Fires when onStatusChange is occured",
+        "parameters": [
+          {
+            "name": "data",
+            "type": "object",
+            "properties": {
+              "jobId": {
+                "description": "The <code>id</code> of the print job that state was changed.",
+                "optional": true,
+                "type": "integer"
+              }, 
+              "tabId": {
+                "description": "The <code>id</code> of tab initiated print job.",
+                "optional": true,
+                "type": "integer"
+              },
+              "frameId": {
+                "description": "The <code>id</code> of frame initiated print job.",
+                "optional": true,
+                "type": "integer"
+              },
+              "status": {
+                "description": "This value is not an error code. Instead, it is a numeric value that indicates the current status of the request. This interface does not define the set of possible status codes.",
+                "optional": true,
+                "type": "integer"
+              },
+              "message": {
+                "description": "Localized text corresponding to aStatus.",
+                "optional": true,
+                "type": "string"
+              }
+            }
+          }
+        ]           
+      }     
+    ]
+  }
+]
+

@@ -1,0 +1,23 @@
+{
+  "manifest_version": 2,
+  "name": "__MSG_extensionName__",
+  "description": "__MSG_extensionDescription__",
+  "version": "1.0",
+  "applications": { "gecko": { "id": "jsprintsetup-we@edabg", "strict_min_version": "48.0" } },
+  "background": { "scripts": ["jsprintsetup-service.js"] },
+  "content_scripts" : [
+    {
+      "matches": ["<all_urls>"],
+      "all_frames": true,
+      "match_about_blank": true,
+      "run_at": "document_start",
+      "js": ["jsprintsetup-iface.js"]
+    }
+  ],
+  "options_ui": {
+    "page": "options/options.html"
+  },
+  "permissions": [ "experiments.printservice", "browsingData", "notifications", "tabs", "storage" ],
+  
+  "default_locale": "en"
+}

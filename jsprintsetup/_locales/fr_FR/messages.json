@@ -1,0 +1,11 @@
+{
+  "extensionName": {
+    "message": "jsPrintSetup WE",
+    "description": "Name of the extension."
+  },
+
+  "extensionDescription": {
+    "message": "jsPrintSetup Webextension",
+    "description": "Description of the extension."
+  }
+}
