@@ -356,7 +356,7 @@ The important functionality to extension which is not yet implemented is **secur
 
 For testing of the implementation there is simple HTML page with two frames, which implement main functionality API testing.
 
-Testing scenario.
+## How to run testing scenario.
 
 1. You need [Firefox Developer Edition](https://www.mozilla.org/bg/firefox/developer/).
 2. Start Firefox and open new tab `about:debugging`.
@@ -364,4 +364,52 @@ Testing scenario.
 4. Load `jsPrintSetup` webextension as `Load Temporary Add-on` and select `/jsprintsetup/manifest.json`.
 5. Open new tab and open file `test-jsp.html`.
 
- 
+## Explanation 
+
+### jsPrintSetup Webextension
+
+jsPrintSetup Webextension exposes `printservice` API to page scripts as follow.
+
+The final goal of this extension is to logically implenent all functions supplied by old XPCOM extension [jsPrintSetup](https://github.com/edabg/jsprintsetup/wiki), 
+considering design requirements for Firefox Webextensions. 
+
+1. [jsprintsetup-service.js](https://github.com/edabg/web-ext-experiment-printservice/blob/master/jsprintsetup/jsprintsetup-service.js) `background script`
+provide *print services* interface to `content script` [jsprintsetup-iface.js](https://github.com/edabg/web-ext-experiment-printservice/blob/master/jsprintsetup/jsprintsetup-iface.js).
+`jsprintsetup-service.js` act as bridge between `jsprintsetup-iface.js` `content script` and `printservice` API.
+
+**Important**:In the future `background script` must implement host based access control via `permissions`.
+
+2. [jsprintsetup-iface.js](https://github.com/edabg/web-ext-experiment-printservice/blob/master/jsprintsetup/jsprintsetup-iface.js) `content script`
+*exposes* to `page script` `jsPrintSetup` object which implements useful print service oriented methods, using *print services* supplied by background script.
+
+`jsPrintSetup` Methods
+
+- `jsPrintSetup.print(printSettings)` - print with `printSettings`
+- `jsPrintSetup.getPrintSettings(printerName)` - get current print settings for `printerName`  
+- `jsPrintSetup.getPrintersList` - get list of available printers
+- `jsPrintSetup.getGlobalPrintSettings` - get global print settings 
+- `jsPrintSetup.savePrintSettings(printSettings, optionSet, setDefaultPrinterName)` - change and save subset (or all) of print settings  
+- `jsPrintSetup.getDefaultPrinterName` - get dfault printer name 
+- `jsPrintSetup.getJobInfo(jobId)` - get status information about print jobId
+
+`jsPrintSetup` Events/Messages
+
+In addition `jsPrintSetup` object post messages to `page scripts` about print jobs which are little transformed and *purified* case of events fired by `printservice` API.
+- `job_start`
+- `job_submited`
+- `job_progress`
+- `job_complete`
+- `job_error`
+  
+### [test-jsp.html](https://github.com/edabg/web-ext-experiment-printservice/blob/master/test-jsp.html) `page script` test example.
+
+This test HTML page contains two simple frames and expose for testing following functionality.
+- print main window `window.jsPrintSetup.print` with predifined print setting `silent`, `headerStr*`, `footerStr*`, `printerName`
+- print frame 1 `window.frames[0].jsPrintSetup.print` with same print settings as main window
+- print frame 2 `window.frames[0].jsPrintSetup.print` with same print settings as main window
+- track events/messages during print process about different jobs - start/progress/complete ...
+- get list of available printers
+- get default printer name
+- get default print settings
+- get global print settings
+- save/modify print settings selectively
