@@ -16,6 +16,23 @@
     border-bottom: 1px solid #333333;
     border-left: 1px solid #CCCCCC;
   }
+  textarea.console {
+    background-color: #000;
+    border: 1px solid #000;
+    color: #00ff00;
+    padding: 8px;
+    font-family: courier new;
+ }
+@media print
+{    
+  .no-print, .no-print *
+  {
+    display: none !important;
+  }
+	.button {
+    display: none !important;
+  }
+} 
 </style>
 <script type="text/javascript">
 //window.jsPrintSetup.permissions();
@@ -28,15 +45,26 @@ x.then(
 );
 */
 
-function checkJobInfo(win, jobId) {
+function logResult(msg, append) {
+  let taRes = document.getElementById("taResult");
+  taRes.value = (append?(taRes.value + "\n"):"") + msg;
+  taRes.scrollTop = taRes.scrollHeight;
+}
+
+function checkJobInfo(what, win, jobId) {
   var jobInfo = win.jsPrintSetup.getJobInfo(jobId);
+  logResult(what+ " Async Checking Ifo for Job:"+jobId, true);
   if (jobInfo) {
   //  jobInfo_1 = JSON.parse(jobInfo);
     console.log("----- job info:"+JSON.stringify(jobInfo));
-  } else
+    logResult(JSON.stringify(jobInfo, null, "\t"), true);
+  } else {
     console.log("----- Can't find jobInfo for jobId:"+jobId);
+    logResult("Can't find jobInfo for jobId:"+jobId, true);
+  }
 }
 
+// default print settings
 var printSettings = {
     "printSilent": true
 //    , "showPrintProgress": false
@@ -55,30 +83,45 @@ function printWindow(win, what) {
         ) {
       if (event.data.message == "job_start") {  
         console.log(what+" Job "+event.data.jobId+" started");
+        logResult(what+" Job "+event.data.jobId+" started", true);
       } else if (event.data.message == "job_progress") {
         console.log(what+" Job "+event.data.jobId+" progress:"+event.data.progress);
+        logResult(what+" Job "+event.data.jobId+" progress:"+event.data.progress, true);
       } else if (event.data.message == "job_error") {
         console.log(what+" Job "+event.data.jobId+" error:"+event.data.statusMessage);
+        logResult(what+" Job "+event.data.jobId+" error:"+event.data.statusMessage, true);
       } else if (event.data.message == "job_rejected") {
         console.log(what+" Job "+event.data.jobId+" rejected.");
+        logResult(what+" Job "+event.data.jobId+" rejected.", true);
       } else if (event.data.message == "job_submited") {
         console.log(what+" Job "+event.data.jobId+" submited.");
+        logResult(what+" Job "+event.data.jobId+" submited.", true);
       } else if (event.data.message == "job_complete") {
         console.log(what+" Job "+event.data.jobId+" completed.");
+        logResult(what+" Job "+event.data.jobId+" completed.", true);
       } else {
         console.log(what+" Unknown message:"+event.data.message);
+        logResult(what+" Unknown message:"+event.data.message, true);
       }
     }
   });
+  // header Str Center place title
+  printSettings.headerStrLeft = '';
+  printSettings.headerStrCenter = '&T';
+  printSettings.headerStrRight = what;
+  printSettings.footerStrCenter = 'What is printed:'+what;
+  
   win.jsPrintSetup.print(printSettings).then(
     (jobId) => {
       console.log(what+" Print job for submitted with id:"+jobId);
-      checkJobInfo(win,jobId);
-//        checkJobInfo(window,jobId); also for main window?
-      setTimeout(() => {checkJobInfo(win,jobId);}, 5000);
+      logResult(what+" Print job for submitted with id:"+jobId, true);
+      checkJobInfo(what, win,jobId);
+//        checkJobInfo("", window, jobId); also for main window?
+      setTimeout(() => {checkJobInfo(what, win, jobId);}, 5000);
     }
     , (err) => {
       console.log(what+" Pint job rejected:"+err);
+      logResult(what+" Pint job rejected:"+err, true);
     }
   );
 } //printWindow
@@ -86,22 +129,22 @@ function printWindow(win, what) {
 function getPrintersList() {
   window.jsPrintSetup.getPrintersList().then(
     (printers) => {
-      document.getElementById("taResult").value = printers.join("\n");
+      logResult(printers.join("\n"), false);
     }
     , (error) => {
-      document.getElementById("taResult").value = error;
+      logResult(error, false);
     }
   );
 } // getPrintersList
 
 function getPrintSettings() {
-  let printerName = null; //"non existent printer";
+  let printerName = null; //can try with "non existent printer";
   window.jsPrintSetup.getPrintSettings(printerName).then(
     (printSettings) => {
-      document.getElementById("taResult").value = JSON.stringify(printSettings);
+      logResult(JSON.stringify(printSettings, null, "\t"), false);
     }
     , (error) => {
-      document.getElementById("taResult").value = error;
+      logResult(error, false);
     }
   );
 } // getPrintSettings
@@ -109,10 +152,10 @@ function getPrintSettings() {
 function getGlobalPrintSettings() {
   window.jsPrintSetup.getGlobalPrintSettings().then(
     (printSettings) => {
-      document.getElementById("taResult").value = JSON.stringify(printSettings);
+      logResult(JSON.stringify(printSettings, null, "\t"), false);
     }
     , (error) => {
-      document.getElementById("taResult").value = error;
+      logResult(error, false);
     }
   );
 } // getGlobalPrintSettings
@@ -120,16 +163,16 @@ function getGlobalPrintSettings() {
 function savePrintSettings() {
   let printSettings = {
     printerName:"Virtual_PDF_Printer"
-    , headerStrLeft: "Left Ala"
-    , headerStrCenter: "Center Ala"
-    , headerStrRight: "Right Ala"
+    , headerStrLeft: "Left Foo"
+    , headerStrCenter: "Center Bar"
+    , headerStrRight: "Right Tender"
   };
   window.jsPrintSetup.savePrintSettings(printSettings, jsPrintSetup.kSaveHeaderCenter, false).then(
     (printSettings) => {
-      document.getElementById("taResult").value = JSON.stringify(printSettings);
+      logResult(JSON.stringify(printSettings, null, "\t"), false);
     }
     , (error) => {
-      document.getElementById("taResult").value = error;
+      logResult(error, false);
     }
   );
 } // savePrintSettings
@@ -137,10 +180,10 @@ function savePrintSettings() {
 function getDefaultPrinterName() {
   window.jsPrintSetup.getDefaultPrinterName().then(
     (printerName) => {
-      document.getElementById("taResult").value = printerName
+      logResult("Default printer name:"+printerName, false);
     }
     , (error) => {
-      document.getElementById("taResult").value = error;
+      logResult(error, false);
     }
   );
 } // getDefaultPrinterName
@@ -149,18 +192,16 @@ function getDefaultPrinterName() {
 </script>	 
 </head>
 <body>
-	<center>
 	<div>
  The document starts here ...<br/>
  This is test<br/>
  This is test<br/>
  This is test<br/>
 	<br/><br/>
-  <a class="button" href="#" OnClick="printWindow(window, 'Main');">Print main window</a>
+  <a class="button" href="#" OnClick="printWindow(window, 'Main window');">Print main window</a>
   <a class="button" href="#" OnClick="printWindow(window.frames[0], 'Frame 1');">Print frame 1</a>
   <a class="button" href="#" OnClick="printWindow(window.frames[1], 'Frame 2');">Print frame 2</a>
 	</div>
-	</center>
 <iframe id="if1" src="test-jsp-f1.html"> </iframe>	
 <iframe id="if2" src="test-jsp-f2.html"> </iframe>	
 <p>
@@ -170,6 +211,6 @@ function getDefaultPrinterName() {
   <a class="button" href="#" OnClick="getDefaultPrinterName();">Get default printer</a>
   <a class="button" href="#" OnClick="savePrintSettings();">Save print settings</a>
 </p>
-<textarea id="taResult" cols="150" rows="15"></textarea>
+<textarea id="taResult" class="console no-print" cols="100" rows="15"></textarea>
 </body>
 </html>
