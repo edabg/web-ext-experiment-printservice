@@ -59,6 +59,9 @@ II. The API.
      Parameters:
        tabId - The id of tab to be printed
        frameId - if particular frame (not main window) wants to be printed
+          frameId is 0 fot top most window in tab and outerWindowID of frame if is child frame/window.
+          https://searchfox.org/mozilla-central/source/toolkit/modules/addons/WebNavigationFrames.jsm#50
+          https://developer.mozilla.org/en-US/docs/Inner_and_outer_windows 
        printSettings - Object with print settings
      Return:
        Promise which is resolved via `jobId` in case of successful print job submission 
@@ -133,14 +136,14 @@ const {
   LocaleData,
   NoCloneSpreadArgs,
   SchemaAPIInterface,
-  SingletonEventManager,
+  SingletonEventManager, renamed to EventManager
 } = ExtensionCommon;
 */
 const {
-  SingletonEventManager,
+  EventManager,
 } = ExtensionCommon;
 
-//console.log(SingletonEventManager);
+//console.log(EventManager);
 
 let printSettingsService = Cc["@mozilla.org/gfx/printsettings-service;1"].getService(Ci.nsIPrintSettingsService);              
 
@@ -398,20 +401,28 @@ class API extends ExtensionAPI {
               if ((typeof(printSettings) == 'object') && ('printerName' in printSettings))
                 printSettings_.printerName = printSettings.printerName;
               // First get any defaults from the printer
-              printSettingsService.initPrintSettingsFromPrinter(printSettings_.printerName, printSettings_);
+              try { // on Mac OSX this raise an exception!
+                printSettingsService.initPrintSettingsFromPrinter(printSettings_.printerName, printSettings_);
+              } catch (err) {
+                Cu.reportError(err);
+              }
               // now augment them with any values from last time
-              printSettingsService.initPrintSettingsFromPrefs(printSettings_, true, printSettings_.kInitSaveAll);
+              try {
+                printSettingsService.initPrintSettingsFromPrefs(printSettings_, true, printSettings_.kInitSaveAll);
+              } catch (err) {
+                Cu.reportError(err);
+              }
               setPrintSettings(printSettings_, printSettings);
-              // obtain window object
+              // get the tab
               activeTab = getTabOrActive(tabId);
-//              consoleService.logStringMessage("tabId:"+tabId+" frameId: "+frameId+" browser:"+activeTab.linkedBrowser);
-//              consoleService.logStringMessage("tabId:"+tabId+" frameId: "+frameId);
-              let originalFrameId = frameId;             
-              if (frameId == null)
-                frameId = activeTab.linkedBrowser.outerWindowID;
+              let outerWindowID = 0;
+              if ((frameId == null) || (frameId == 0))
+                outerWindowID = activeTab.linkedBrowser.outerWindowID;
+              else 
+                outerWindowID = frameId;
 //              consoleService.logStringMessage("tabId:"+tabId+" frameId: "+frameId);  
-  //            activeTab.linkedBrowser.print(frameId, printSettings, null);
-              activeTab.linkedBrowser.print(frameId, printSettings_, progressListenerMap.add(printJobId, getTabId(activeTab), originalFrameId));
+//              activeTab.linkedBrowser.print(frameId, printSettings, null);
+              activeTab.linkedBrowser.print(outerWindowID, printSettings_, progressListenerMap.add(printJobId, getTabId(activeTab), frameId));
 
 // This scenario doesn't work with frameId
 //              let contentWindow = Services.wm.getOuterWindowWithId(frameId);
@@ -531,7 +542,7 @@ class API extends ExtensionAPI {
         }, // savePrintSettings
         
         // Events
-        onStateChange: new SingletonEventManager(context, "printservice.onStateChange", fire => {
+        onStateChange: new EventManager(context, "printservice.onStateChange", fire => {
           const listener = (event, data) => {
 //            console.log("fire async", data);
             fire.async(data);
@@ -541,7 +552,7 @@ class API extends ExtensionAPI {
             progressListenerMap.off("state_change", listener);
           };
         }).api(), // onStateChange                
-        onProgressChange: new SingletonEventManager(context, "printservice.onProgressChange", fire => {
+        onProgressChange: new EventManager(context, "printservice.onProgressChange", fire => {
           const listener = (event, data) => {
 //            console.log("fire async", data);
             fire.async(data);
@@ -551,7 +562,7 @@ class API extends ExtensionAPI {
             progressListenerMap.off("progress_change", listener);
           };
         }).api(), // onProgressChange                
-        onStatusChange: new SingletonEventManager(context, "printservice.onStatusChange", fire => {
+        onStatusChange: new EventManager(context, "printservice.onStatusChange", fire => {
           const listener = (event, data) => {
 //            console.log("fire async", data);
             fire.async(data);

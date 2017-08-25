@@ -23,9 +23,35 @@
 
     </section>
 
+    <section class="clear-options">
+      <span class="title" >__MSG_jsp_SitePermissions__</span>
+<table border="0">
+  <tr>
+    <td><input type="text" id="host-access-input" class="host" value="" title="Enter host name"></td>
+    <td>
+      <button id="host-access-allow">Allow</button>
+      <button id="host-access-block">Block</button>
+      <button id="host-access-remove">Remove</button>
+    </td>
+  </tr>
+</table>      
+<table id="host-access-table" class="scroll">
+    <thead>
+        <tr>
+            <th class="host">Host</th>
+            <th class="permission">Permission</th>
+        </tr>
+    </thead>
+    <tbody id="host-access-table-body">
+        <tr id="host-access-tpl-row" data-value="edabg.com">
+            <td class="host" data-value="edabg.com">edabg.com</td>
+            <td class="permission" data-value="allow">allow</td>
+        </tr>
+    </tbody>
+</table>
+    </section>
 
     <div id="options-save">
-      <button id="site-permissions-button">__MSG_jsp_SitePermissions__</button>
       <button id="save-button">__MSG_jsp_Save__</button>
       <span id="options-save-status">__MSG_jsp_Saved__</span>
     </div>

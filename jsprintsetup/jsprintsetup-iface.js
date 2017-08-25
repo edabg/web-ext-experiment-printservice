@@ -15,11 +15,82 @@
 
 // Imports
 //var {interfaces: Ci, manager: Cm, results: Cr, classess: Cc, utils : Cu } = Components;
+//var CiById = Components.interfacesById;
+//var Cr = Components.Results;
 var Ci = Components.interfaces;
-var CiById = Components.interfacesById;
-var Cr = Components.Results;
 
 let IPS = Ci.nsIPrintSettings;
+
+//console.log("jsPrintSetup iface loaded")
+
+function jsPrintSetupException(message) {
+   this.message = message;
+   this.name = 'jsPrintSetupException';
+}
+
+// Supported Print Settings
+const PRINT_SETTINGS_FIELDS = {
+  printerName :"printerName",
+  orientation : "orientation",
+  scaling : "scaling",
+  shrinkToFit : "shrinkToFit",
+  printBGColors : "printBGColors",
+  printBGImages : "printBGImages",
+  printInColor : "printInColor",
+  printReversed : "printReversed",
+  printSilent : "printSilent",
+  showPrintProgress : "showPrintProgress",
+  printToFile : "printToFile",
+  toFileName : "toFileName",
+  resolution : "resolution",
+  printPageDelay : "printPageDelay",
+  duplex : "duplex",
+  numCopies : "numCopies",
+  howToEnableFrameUI : "howToEnableFrameUI",
+  printFrameTypeUsage : "printFrameTypeUsage",
+  printFrameType : "printFrameType",
+  printRange : "printRange",
+  startPageRange : "startPageRange",
+  endPageRange : "endPageRange",
+  paperName : "paperName",
+  paperData : "paperData",
+  paperSizeUnit : "paperSizeUnit",
+  paperWidth : "paperWidth",
+  paperHeight : "paperHeight",
+  outputFormat : "outputFormat",
+  title : "title",
+  docURL: "docURL",
+  headerStrLeft : "headerStrLeft",
+  headerStrCenter : "headerStrCenter",
+  headerStrRight : "headerStrRight",
+  footerStrLeft : "footerStrLeft",
+  footerStrCenter : "footerStrCenter",
+  footerStrRight : "footerStrRight",
+  unwriteableMarginLeft : "unwriteableMarginLeft",
+  unwriteableMarginRight : "unwriteableMarginRight",
+  unwriteableMarginTop : "unwriteableMarginTop",
+  unwriteableMarginBottom : "unwriteableMarginBottom",
+  edgeLeft : "edgeLeft",
+  edgeRight : "edgeRight",
+  edgeTop : "edgeTop",
+  edgeBottom : "edgeBottom",
+  marginLeft : "marginLeft",
+  marginRight : "marginRight",
+  marginTop : "marginTop",
+  marginBottom : "marginBottom"
+};
+
+function assignPrintSettings(dstPrintSettings, srcPrintSettings) {
+  if (typeof srcPrintSettings !== 'object') {
+    throw new jsPrintSetupException('Ivalid argument srcPrintSettings');
+  } 
+  if (typeof dstPrintSettings !== 'object' || dstPrintSettings === null) 
+    dstPrintSettings = {}; 
+  for (let field of Object.keys(PRINT_SETTINGS_FIELDS)) {
+    if ((field in srcPrintSettings) && (srcPrintSettings[field] != null))
+      dstPrintSettings[PRINT_SETTINGS_FIELDS[field]] = srcPrintSettings[field];
+  }
+}
 
 // print job list 
 // TODO: Completed "old" jobs can be removed
@@ -124,13 +195,25 @@ var wrappedJSObjectHelper = {
     for (let i in fromObject)
       clonedObject[i] = fromObject[i];
     return clonedObject;
+  },
+  newPromise: function(executor) {
+    return new window.wrappedJSObject.Promise(
+      exportFunction(
+        executor
+        , window.wrappedJSObject
+      )
+    );
   }
 };
 
 
-var jsPrintSetup = {
+// jsPrintSetup interface constructor
+function jsPrintSetupIface() {
+//  console.log("Constructor");
 
-	constants : {
+  // 'private' members
+  var self = this;
+	var constants = {
 		// Save Options Constants
 		kSaveOddEvenPages : IPS.kInitSaveOddEvenPages,
 		kSaveHeaderLeft   : IPS.kInitSaveHeaderLeft,	
@@ -204,30 +287,35 @@ var jsPrintSetup = {
     WPL_STATE_IS_DOCUMENT: Ci.nsIWebProgressListener.STATE_IS_DOCUMENT, // 131072
     WPL_STATE_IS_NETWORK: Ci.nsIWebProgressListener.STATE_IS_NETWORK, // 262144
     WPL_STATE_IS_WINDOW: Ci.nsIWebProgressListener.STATE_IS_WINDOW, // 524288
-	},
-	
-	lastJobId : 0,
+	}; // constants
 
-	printSettings : {
-	  
-	},
-	
-	init: function() {
-    // initialize constants like properties
-    for (var cname in jsPrintSetup.constants) {
-    	jsPrintSetup[cname] = jsPrintSetup.constants[cname];
-    }	
-    browser.runtime.onMessage.addListener(jsPrintSetup.backgroundMessageHandler);
-	},
-	
-	backgroundMessageHandler : function(request) {
+  function _postMessage(message, msgData) {
+    let msg = {"source": "jsPrintSetup", "message": message};
+//    if ((msgData !== null) && (typeof(msgData[Symbol.iterator]) === "function")) {
+    if (msgData !== null) {
+      for(let i in msgData)
+        msg[i] = msgData[i];
+    }
+    window.postMessage(msg, "*");
+  } // postMessage
+  
+  function error(msg) {
+    console.log("jsPrintSetup Error: "+msg);
+  } // error
+
+  function checkOptionName(option) {
+    if (!(option in PRINT_SETTINGS_FIELDS))
+      throw jsPrintSetupException("Invalid option '"+option+"'");
+  } // checkOptionName
+ 
+	function backgroundMessageHandler(request) {
 //    console.log("Message from the background script:"+request.message);
     if (request.message == "state_change") {
 //      console.log("stateFlags:"+request.stateFlags+" status:"+request.status);
       // check for start
-      if ((request.stateFlags & jsPrintSetup.WPL_STATE_START) && (request.stateFlags & jsPrintSetup.WPL_STATE_IS_NETWORK)) {
+      if ((request.stateFlags & constants.WPL_STATE_START) && (request.stateFlags & constants.WPL_STATE_IS_NETWORK)) {
         printJobList.started(request.jobId);
-        jsPrintSetup.postMessage(
+        _postMessage(
           "job_start"
           , {
             jobId : printJobList.getLocalJobId(request.jobId)
@@ -235,23 +323,16 @@ var jsPrintSetup = {
         );
       }
       // check for completion
-      if ((request.stateFlags & jsPrintSetup.WPL_STATE_STOP) && (request.stateFlags & jsPrintSetup.WPL_STATE_IS_NETWORK)) {
+      if ((request.stateFlags & constants.WPL_STATE_STOP) && (request.stateFlags & constants.WPL_STATE_IS_NETWORK)) {
+        let localJobId = printJobList.getLocalJobId(request.jobId); 
         printJobList.completed(request.jobId);
-        jsPrintSetup.postMessage(
+        _postMessage(
           "job_complete"
           , {
-            jobId : printJobList.getLocalJobId(request.jobId)
+            jobId : localJobId
           }
         );
       }
-//      jsPrintSetup.postMessage(
-//        "state_change"
-//        , {
-//          jobId : printJobList.getLocalJobId(request.jobId)
-//          , stateFlags: request.stateFlags
-//          , status: request.status
-//        }
-//      );
     } else if (request.message == "progress_change") {
 //      console.log("progress change");
       let progress = undefined;
@@ -262,7 +343,7 @@ var jsPrintSetup = {
       }
       let jobInfo = printJobList.progressChange(request.jobId, progress);
       if (jobInfo && jobInfo.started) {
-        jsPrintSetup.postMessage(
+        _postMessage(
           "job_progress"
           , {
             jobId : printJobList.getLocalJobId(request.jobId)
@@ -274,7 +355,7 @@ var jsPrintSetup = {
 //      console.log("status change");
       // this fires in case of error
       printJobList.error(request.jobId, request.statusMessage);
-      jsPrintSetup.postMessage(
+      _postMessage(
         "job_error"
         , {
           jobId : printJobList.getLocalJobId(request.jobId)
@@ -284,233 +365,375 @@ var jsPrintSetup = {
     }
       
     return Promise.resolve({response: "Message received"});
-  },
+  } // backgroundMessageHandler
   
-  postMessage: function(message, msgData) {
-    let msg = {"source": "jsPrintSetup", "message": message};
-//    if ((msgData !== null) && (typeof(msgData[Symbol.iterator]) === "function")) {
-    if (msgData !== null) {
-      for(let i in msgData)
-        msg[i] = msgData[i];
+  function init() {
+    // initialize constants like properties
+    self.lastJobId = 0;
+
+    self.printerName = "";
+      
+  	self.printSettings = {};
+  	self.globalPrintSettings = {};
+  	
+    for (var cname in constants) {
+    	self[cname] = constants[cname];
+    }	
+    browser.runtime.onMessage.addListener(backgroundMessageHandler);
+  } 
+
+  init();  
+  
+  // follow public (exported) methods
+
+  this.refreshOptions = function() {
+    self.printSettings = {};
+    self.globalPrintSettings = {};
+//    self.printerName = "";
+
+    // get default printer name if not is set    
+    let p0;
+    if (self.printerName == "") {
+      let msg = {
+        "call": "getDefaultPrinterName"
+      };
+      p0 = new Promise(
+          (resolve, reject) => {
+            browser.runtime.sendMessage(msg).then(
+              (printerName) => {
+                console.log("printer name resolved");
+                self.printerName = printerName;
+                resolve(printerName);
+              }
+              , (err) => {
+                console.log("printer name rejected");
+                reject(err.message);
+              }
+            );
+          }
+      );
+    } else {
+      p0 = Promise.resolve();
     }
-    window.postMessage(msg, "*");
-  },
+    
+    let p1 = new Promise(
+      (resolve, reject) => {
+        function noop() {}
+        // imitate finally when printerName is determined
+        p0.then(noop).catch(noop).then(() => {
+          // gets global print settings
+          let msg = {
+            "call": "getGlobalPrintSettings"
+          };
+          let p2 = browser.runtime.sendMessage(msg).then(
+            (printSettings) => {
+              console.log("global print settings got");
+              assignPrintSettings(self.globalPrintSettings, printSettings);
+            }
+            , (err) => {
+              error(err);
+            }
+          );
+          // after 'finally' global settings initialized
+          p2.then(noop).catch(noop).then(() => {
+            // gets this printer prinSettings
+            let msg = {
+              "call": "getPrintSettings"
+              , "printerName": self.printerName
+            };
+            let p3 = browser.runtime.sendMessage(msg).then(
+              (printSettings) => {
+                console.log("print settings got");
+                assignPrintSettings(self.printSettings, printSettings);
+                if (self.printerName == "")
+                  self.printerName = self.printSettings.printerName;
+              }
+              , (err) => {
+                error(err);
+              }
+            );
+            p3.then(
+              () => resolve()
+              , (err) => reject()
+            );
+          });
+        });
+      }
+    );
+
+    return p1;
+  }; // refreshOptions
   
-	setOption : function (option, value) {
-			alert("setOption("+option+","+value+")");
-	},
+  this.checkPermissions = function() {
+    let msg = {
+      "call": "checkPermissions"
+    };
+    return wrappedJSObjectHelper.newPromise(
+      (resolve, reject) => {
+        browser.runtime.sendMessage(msg).then(
+          (permissions) => {
+            resolve(permissions);
+          }
+          , (err) => {
+            reject(err.message);
+          }
+        );
+      }
+    );
+  }; // checkForPermissions
+  
+  this.lazyInit = function() {
+    return wrappedJSObjectHelper.newPromise(
+      (resolve, reject) => {
+        self.refreshOptions().then(
+          () => resolve()
+          , (err) => reject(err)
+        );
+      }
+    );
+  }; // lazyInit
+  
+  this.getPrinter = function() {
+    return self.printerName;
+  }; // getPrinter
 
-	setGlobalOption : function (option, value) {
-			alert("setGlobalOption("+option+","+value+")");
-	},
+  this.setPrinter = function(printerName) {
+    self.printerName = printerName;
+    return wrappedJSObjectHelper.newPromise(
+      (resolve, reject) => {
+        self.refreshOptions().then(
+          () => resolve()
+          , (err) => reject(err)
+        );
+      }
+    );
+  }; // getPrinter
+  
+	this.setOption = function (option, value) {
+	  checkOptionName(option);
+	  // TODO: Option vaue adjustements
+		self.printSettings[option] = value;
+	}; // setOption
 
-	getOption : function (option) {
-	},
+	this.setGlobalOption = function (option, value) {
+	  checkOptionName(option);
+	  // TODO: Option vaue adjustements
+		self.globalPrintSettings[option] = value;
+	}; // setGlobalOption
 
-	getGlobalOption : function (option) {
-	},
+	this.getOption = function (option) {
+	  checkOptionName(option);
+	  if (option in self.printSettings)
+      return self.printSettings[option];
+    else 
+      return undefined;	    
+	}; // getOption
+
+	this.getGlobalOption = function (option) {
+	  checkOptionName(option);
+	  // TODO: Option vaue adjustements
+	  if (option in self.globalPrintSettings)
+      return self.globalPrintSettings[option];
+    else 
+      return undefined;	    
+	};
 	
-	saveOptions : function (optionSet) {
-	},
+	this.getOptions = function() {
+	  // TODO: Option vaue adjustements
+	  return wrappedJSObjectHelper.cloneObject(self.printSettings);
+	};
 	
-	saveGlobalOptions : function (optionSet) {
-	},
+	this.getGlobalOptions = function() {
+	  // TODO: Option vaue adjustements
+	  return wrappedJSObjectHelper.cloneObject(self.globalPrintSettings);
+	};
 	
-	refreshOptions : function () {
-	},
+	this.saveOptions = function (optionSet) {
+	  // TODO:
+	};
 	
-	print: function(printSettings) {
-/*	  
-	  let testPrintSettings = {
-        "printSilent": true
-//      , "outputFormat": this.kOutputFormatPDF
-//        , "printToFile": true
-//        , "toFileName": "/home/mitko/test.pdf"
-        , "printerName" : "PDF" // "Virtual_PDF_Printer"
-	  };
-*/
+	this.saveGlobalOptions = function (optionSet) {
+	  // TODO:
+	};
+	
+	this.printWindow = function(win, printSettings) {
+	  // indirect call of jsPrintSetup object in this 'win' window  
+	  win.wrappedJSObject.jsPrintSetup.print(printSettings);
+	}; // printWindow
+
+	this.print = function(printSettings) {
+	  // TODO: printSettins Option vaue adjustements
+    if (typeof printSettings  === "undefined" || printSettings === null)
+      printSettings = this.printSettings;
     let msg = {
       "call": "printTab"
-//      , "window":null
       , "printSettings": printSettings
     };
     let localJobId = printJobList.newJob();
 
-    return new window.wrappedJSObject.Promise(
-      exportFunction(
-        (resolve, reject) => {
-          browser.runtime.sendMessage(msg).then(
-            (res) => {
+    return wrappedJSObjectHelper.newPromise(
+      (resolve, reject) => {
+        browser.runtime.sendMessage(msg).then(
+          (res) => {
 //              console.log("iface then:"+res.status);
-              printJobList.submited(localJobId, res.jobId);
-              jsPrintSetup.postMessage(
-                "job_submited"
-                , {
-                  jobId: localJobId
-                }                                 
-              );
-              resolve(localJobId);
-            }
-            , (err) => {
+            printJobList.submited(localJobId, res.jobId);
+            postMessage(
+              "job_submited"
+              , {
+                jobId: localJobId
+              }                                 
+            );
+            resolve(localJobId);
+          }
+          , (err) => {
 //              console.log("iface err:"+err.message);
-              printJobList.rejected(localJobId, err.message);
-              jsPrintSetup.postMessage(
-                "job_rejected"
-                , {
-                  jobId: localJobId
-                }
-              );
-              reject(err.message);
-            }
-          );
-        }
-        , window.wrappedJSObject
-      )
+            printJobList.rejected(localJobId, err.message);
+            postMessage(
+              "job_rejected"
+              , {
+                jobId: localJobId
+              }
+            );
+            reject(err.message);
+          }
+        );
+      }
     );
-	},
-	
-	getPrintersList : function() {
+	}; // print
+
+	this.getPrintersList = function() {
     let msg = {
       "call": "listPrinters"
     };
-    return new window.wrappedJSObject.Promise(
-      exportFunction(
-        (resolve, reject) => {
-          browser.runtime.sendMessage(msg).then(
-            (printers) => {
-              console.log("CS:"+printers);
-              resolve(wrappedJSObjectHelper.cloneArray(printers));
-            }
-            , (err) => {
-              reject(err.message);
-            }
-          );
-        }
-        , window.wrappedJSObject
-      )
+    return wrappedJSObjectHelper.newPromise(
+      (resolve, reject) => {
+        browser.runtime.sendMessage(msg).then(
+          (printers) => {
+            console.log("CS:"+printers);
+            resolve(wrappedJSObjectHelper.cloneArray(printers));
+          }
+          , (err) => {
+            reject(err.message);
+          }
+        );
+      }
     );
-	},
+	}; // getPrintersList
 
-	getPrintSettings : function(printerName) {
+	this.getPrintSettings = function(printerName) {
+	  if (typeof printerName === "undefined" || printerName === null)
+      printerName = '';
     let msg = {
       "call": "getPrintSettings"
       , "printerName": printerName
     };
-    return new window.wrappedJSObject.Promise(
-      exportFunction(
-        (resolve, reject) => {
-          browser.runtime.sendMessage(msg).then(
-            (printSettings) => {
-              resolve(wrappedJSObjectHelper.cloneObject(printSettings));
-            }
-            , (err) => {
-              reject(err.message);
-            }
-          );
-        }
-        , window.wrappedJSObject
-      )
+    return wrappedJSObjectHelper.newPromise(
+      (resolve, reject) => {
+        browser.runtime.sendMessage(msg).then(
+          (printSettings) => {
+        	  // TODO: printSettings Option vaue adjustements
+            resolve(wrappedJSObjectHelper.cloneObject(printSettings));
+          }
+          , (err) => {
+            reject(err.message);
+          }
+        );
+      }
     );
-	},
+	}; // getPrintSettings
 
-	getGlobalPrintSettings : function(printerName) {
+	this.getGlobalPrintSettings = function(printerName) {
     let msg = {
       "call": "getGlobalPrintSettings"
     };
-    return new window.wrappedJSObject.Promise(
-      exportFunction(
-        (resolve, reject) => {
-          browser.runtime.sendMessage(msg).then(
-            (printSettings) => {
-              resolve(wrappedJSObjectHelper.cloneObject(printSettings));
-            }
-            , (err) => {
-              reject(err.message);
-            }
-          );
-        }
-        , window.wrappedJSObject
-      )
+    return wrappedJSObjectHelper.newPromise(
+      (resolve, reject) => {
+        browser.runtime.sendMessage(msg).then(
+          (printSettings) => {
+        	  // TODO: printSettings Option vaue adjustements
+            resolve(wrappedJSObjectHelper.cloneObject(printSettings));
+          }
+          , (err) => {
+            reject(err.message);
+          }
+        );
+      }
     );
-	},
+	}; // getGlobalPrintSettings
 
-	savePrintSettings : function(printSettings, optionSet, setDefaultPrinterName) {
+	this.savePrintSettings = function(printSettings, optionSet, setDefaultPrinterName) {
+ 	  // TODO: printSettings Option vaue adjustements
     let msg = {
       "call": "savePrintSettings"
       , "printSettings": printSettings
       , "optionSet": optionSet
       , "setDefaultPrinterName": setDefaultPrinterName
     };
-    return new window.wrappedJSObject.Promise(
-      exportFunction(
-        (resolve, reject) => {
-          browser.runtime.sendMessage(msg).then(
-            (printSettings) => {
-              resolve(wrappedJSObjectHelper.cloneObject(printSettings));
-            }
-            , (err) => {
-              reject(err.message);
-            }
-          );
-        }
-        , window.wrappedJSObject
-      )
+    return wrappedJSObjectHelper.newPromise(
+      (resolve, reject) => {
+        browser.runtime.sendMessage(msg).then(
+          (printSettings) => {
+            resolve(wrappedJSObjectHelper.cloneObject(printSettings));
+          }
+          , (err) => {
+            reject(err.message);
+          }
+        );
+      }
     );
-	},
-	
-	getDefaultPrinterName : function() {
+	}; // savePrintSettings
+
+	this.getDefaultPrinterName = function() {
     let msg = {
       "call": "getDefaultPrinterName"
     };
-    return new window.wrappedJSObject.Promise(
-      exportFunction(
-        (resolve, reject) => {
-          browser.runtime.sendMessage(msg).then(
-            (printerName) => {
-              resolve(printerName);
-            }
-            , (err) => {
-              reject(err.message);
-            }
-          );
-        }
-        , window.wrappedJSObject
-      )
+    return wrappedJSObjectHelper.newPromise(
+      (resolve, reject) => {
+        browser.runtime.sendMessage(msg).then(
+          (printerName) => {
+            resolve(printerName);
+          }
+          , (err) => {
+            reject(err.message);
+          }
+        );
+      }
     );
-	},
+	}; // getDefaultPrinterName
 
-
-	getJobInfo: function(jobId) {
+	this.getJobInfo = function(jobId) {
 	  let jobInfo = printJobList.getJobInfoByLocalId(jobId);
 	  if (jobInfo !== undefined) {
 	    return wrappedJSObjectHelper.cloneObject(jobInfo);
 	  } else 
 	   return null;
-	},
-	
-	testAsync: function() {
+	}; // getJobInfo
+
+	this.testAsync = function() {
 //	  return new Promise((res) => {return "ala bala";});
 //	  var x = new window.wrappedJSObject.Promise(function (resolve, reject) {resolve("ala bala");});
 //	  return x;
-    return new window.wrappedJSObject.Promise(
-      exportFunction(
-        (resolve, reject) => {
-          resolve("ala bala");
-          //reject("ala bala");
-        }
-        , window.wrappedJSObject
-      )
+    return wrappedJSObjectHelper.newPromise(
+      (resolve, reject) => {
+        resolve("ala bala");
+        //reject("ala bala");
+      }
     );
-	}
-}
+	}; // testAsync
 
-jsPrintSetup.init();
+} // jsPrintSetupIface
+
+
+//var jsPrintSetup = new jsPrintSetupIface();
+//console.log(typeof jsPrintSetup.getOption);
 
 window.wrappedJSObject.jsPrintSetup = cloneInto(
-  jsPrintSetup,
+  new jsPrintSetupIface(),
   window,
   {cloneFunctions: true}  
 );
+//console.log("jsPrintSetup iface end")
+
 //Object.defineProperty(window, "browser", { value: this.browser, enumerable: true });
 
 /*

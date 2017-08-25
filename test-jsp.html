@@ -105,6 +105,12 @@ function printWindow(win, what) {
       }
     }
   });
+  win.addEventListener("beforeprint", function(event) {
+      logResult("before print: "+what, true);
+  });
+  win.addEventListener("afterprint", function(event) {
+      logResult("after print: "+what, true);
+  });
   // header Str Center place title
   printSettings.headerStrLeft = '';
   printSettings.headerStrCenter = '&T';
@@ -142,6 +148,7 @@ function getPrintSettings() {
   window.jsPrintSetup.getPrintSettings(printerName).then(
     (printSettings) => {
       logResult(JSON.stringify(printSettings, null, "\t"), false);
+      logResult(JSON.stringify(window.jsPrintSetup.printSettings, null, "\t"), true);
     }
     , (error) => {
       logResult(error, false);
@@ -188,7 +195,32 @@ function getDefaultPrinterName() {
   );
 } // getDefaultPrinterName
 
-	
+function initJsPrintSetup() {
+  jsPrintSetup.lazyInit().then(
+    () => {
+      logResult("Settings initialized", false);
+      logResult(JSON.stringify(jsPrintSetup.getOptions()), true);
+    }
+    , (error) => {
+      logResult(error, false);
+    }
+  );
+}
+function testSetGetOption() {
+  jsPrintSetup.setOption("headerStrLeft", "left one");
+  logResult("get headerStrLeft:"+jsPrintSetup.getOption("headerStrLeft"), false);
+  logResult("get headerStrRight:"+jsPrintSetup.getOption("headerStrRight"), true);
+}
+function checkPermissions() {
+  jsPrintSetup.checkPermissions().then(
+    (permission) => {
+      logResult("jsPrintSetup access allowed with permission "+permission, false);
+    }
+    , (error) => {
+      logResult("jsPrintSetup access denied "+error, false);
+    }
+  );
+}
 </script>	 
 </head>
 <body>
@@ -209,7 +241,11 @@ function getDefaultPrinterName() {
   <a class="button" href="#" OnClick="getPrintSettings();">Get print settings</a>
   <a class="button" href="#" OnClick="getGlobalPrintSettings();">Get Global print settings</a>
   <a class="button" href="#" OnClick="getDefaultPrinterName();">Get default printer</a>
-  <a class="button" href="#" OnClick="savePrintSettings();">Save print settings</a>
+  <a class="button" href="#" OnClick="savePrintSettings();">Save print settings</a><br />
+  <a class="button" href="#" OnClick="window.jsPrintSetup.printWindow(window.frames[1], printSettings);">Print frame 2 Test</a><br />
+  <a class="button" href="#" OnClick="initJsPrintSetup();">Init settings</a>
+  <a class="button" href="#" OnClick="testSetGetOption();">Test set option</a>
+  <a class="button" href="#" OnClick="checkPermissions();">Check Permissions</a><br />
 </p>
 <textarea id="taResult" class="console no-print" cols="100" rows="15"></textarea>
 </body>

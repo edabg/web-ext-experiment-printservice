@@ -13,52 +13,181 @@
 
 "use strict";
 
-function jsPrintSetupException(message) {
+console.log('jsPrintSetup Services is loading...');
+
+function jsPrintSetupException(message, type="common") {
    this.message = message;
-   this.name = 'jsPrintSetupException';
+   this.name = 'jsPrintSetupServiceException';
+   this.type = type;
 }
 
+
 // jsprintsetup-service
-var jsPrintSetupService = {
+function jsPrintSetupService() {
+
+  var self = this;
+  var notification = null;
+
+	this.JSPS_ALLOW_ACTION = 1;
+	this.JSPS_DENY_ACTION  = 2;
+	this.JSPS_UNKNOWN_ACTION = 0;
+
+  // default settings must be same in options page
+  this.defaultSettings = {
+    securityMode: "prompt", // prompt,allowed,all
+    localFilesEnabled : false,
+    allowBlockedRequest : false,
+    accessList : new Map()
+  };
+
+  this.settings = this.defaultSettings;
+
   /*
   Generic error logger.
   */
-  onError: function(e) {
+  function reportError(e) {
     console.error(e);
-  },
-
-  defaultSettings : {
-    securityMode: "prompt", // prompt,allowed,all
-    localFilesEnabled : false,
-   allowBlockedRequest : false
-  },
+  }
+  
   /*
   On startup, check whether we have stored settings.
   If we don't, then store the default settings.
   */
-  checkStoredSettings: function (storedSettings) {
+  function checkStoredSettings(storedSettings) {
     if (
       !("securityMode" in storedSettings) 
       || !("localFilesEnabled" in storedSettings) 
       || !("allowBlockedRequest" in storedSettings)) {
-      browser.storage.local.set(this.defaultSettings);
+//      browser.storage.local.set(self.defaultSettings);
+    } else {
+      if ("securityMode" in storedSettings)
+        self.settings.securityMode = storedSettings.securityMode;
+      if ("localFilesEnabled" in storedSettings)
+        self.settings.localFilesEnabled = storedSettings.localFilesEnabled;
+      if ("allowBlockedRequest" in storedSettings)
+        self.settings.allowBlockedRequest = storedSettings.allowBlockedRequest;
+      // must be sure that is map!
+      if ("accessList" in storedSettings) {
+        try {
+          self.settings.accessList = new Map(storedSettings.accessList); // new Map(storedSettings.accessList);
+        } catch (err) {
+          reportError(err);
+        }
+      }
     }
-  },
-  
-  init: function() {
-    // load settings
+//    browser.storage.local.set(self.settings);
+//    console.log("defaultSettings", self.defaultSettings);
+    console.log("Settings", self.settings);
+  }
+
+  function readSettings() {
     let gettingStoredSettings = browser.storage.local.get();
-    gettingStoredSettings.then(this.checkStoredSettings, this.onError);
-    // jsprintsetup-iface listener
-    browser.runtime.onMessage.addListener(this.ifaceListener);
-    // printservice event listeners
-    browser.printservice.onStateChange.addListener(this.stateListener);
-    browser.printservice.onProgressChange.addListener(this.progressListener);
-    browser.printservice.onStatusChange.addListener(this.statusListener);
-    
-  }, // init
+    gettingStoredSettings.then(checkStoredSettings, (err) => reportError);
+  }
+
+  function storageListener(changes, areaName) {
+    console.log("storageListener", areaName, changes);
+    readSettings();
+  }
   
-  ifaceListener: function (message, sender, sendResponse) {
+  this.storeSettings = function() {
+    let settings = {
+      securityMode: self.settings.securityMode,
+      localFilesEnabled: self.settings.localFilesEnabled,
+      allowBlockedRequest: self.settings.allowBlockedRequest,
+      accessList: Array.from(self.settings.accessList)
+    };
+    browser.storage.local.set(settings);
+  };
+  
+  function showPageAction(urlInfo) {
+    browser.pageAction.setPopup(
+      {
+        tabId: urlInfo.tabId, 
+        popup: "options/options.html?host="+encodeURIComponent(urlInfo.URL.host)
+      }
+    );
+    // TODO: icon change also
+    let title = "jsPrintSetup service - host:"+urlInfo.URL.host;
+    if (urlInfo.permission == self.JSPS_ALLOW_ACTION)
+      title = title + " HAVE ACCESS to your printers!";
+    else if (urlInfo.permission == self.JSPS_DENY_ACTION) 
+      title = title + " is BLOCKED to use your printers!";
+    else
+      title = title + " REQUESTED to use your printers!";
+    browser.pageAction.setTitle(
+      {
+        tabId: urlInfo.tabId, 
+        title: title
+      }
+    );
+    browser.pageAction.show(urlInfo.tabId);
+
+    // show notification in case of request or block
+    if (!urlInfo.accessEnabled) {
+      notification = browser.notifications.create(
+        "jsprintsetup-service",
+        {
+          "type": "basic",
+          "iconUrl": null,
+          "title": "jsprintsetup-service",
+          "message": title,
+          "priority" : 2
+        }
+      );
+    }
+  } // showPageAction  
+  
+	function checkPermissions(sender) {
+		var permission = self.JSPS_UNKNOWN_ACTION;
+		let url_ = null;
+		try {
+		  url_ = new URL(sender.url);
+			if (url_.protocol.startsWith("file:")) {
+				// local file
+				permission = self.settings.localFilesEnabled?self.JSPS_ALLOW_ACTION:self.JSPS_DENY_ACTION; 
+			} else if (url_.protocol.startsWith("http")) {
+			  if (self.settings.accessList.has(url_.host)) {
+			    let hostInfo = self.settings.accessList.get(url_.host);
+			    if (hostInfo.access == "allow")
+			     permission = self.JSPS_ALLOW_ACTION;
+			    else 
+			     permission = self.JSPS_DENY_ACTION;
+			  } else {
+  				permission = self.JSPS_UNKNOWN_ACTION;
+			  }
+			} else {
+				// usupported scheme
+				permission = self.JSPS_DENY_ACTION;
+				reportError("Unsupported scheme: "+url_.protocol);
+			}
+		} catch (err) {
+			reportError(err);	
+		  url_ = new URL("about:error");
+		}
+
+		let urlInfo = {
+		  "tabId": sender.tab.id
+		  , "URL": url_
+		  , "urlPermission": permission
+		  , "permissionission": permission
+		  , "accessEnabled": false
+		};
+		
+		// adjust permission depending security mode (TODO: "all" must be disabled!)
+		if (self.settings.securityMode == "all") { 
+		  permission = self.JSPS_ALLOW_ACTION;
+    } 
+    urlInfo.permission = permission;
+		urlInfo.accessEnabled = (permission == self.JSPS_ALLOW_ACTION);
+    
+    showPageAction(urlInfo);
+    
+		// TODO: send permission info message content script
+		return urlInfo;
+  }  
+  
+  function ifaceListener(message, sender, sendResponse) {
   //  console.log(message);
   //  console.log(sender);
   //  console.log(sendResponse);
@@ -74,15 +203,18 @@ var jsPrintSetupService = {
   */  
     if ("call" in message) {
       
-//      browser.notifications.create({
-//        "type": "basic",
-//        "iconUrl": null,
-//        "title": "jsprintsetup-service called",
-//        "message": "Called method:"+message.call
-//      });
-  
+      console.log(sender.url);
       console.log(message.call+" tabId:"+sender.tab.id+" windowId:"+sender.tab.windowId+" frameId:"+sender.frameId);
+
+      let urlInfo = checkPermissions(sender);
+      if (!urlInfo.accessEnabled)
+        throw new jsPrintSetupException("jsPrintsetupService access denied for URL "+sender.url, "permission");
+//        return Promise.reject(new jsPrintSetupException("jsPrintsetupService access denied from URL "+sender.url)); 
+
       switch (message.call) {
+        case "checkPermissions" :
+          return Promise.resolve(urlInfo.permission);
+          break;
         case "printTab" :
   //        console.log(message.printSettings);
           return browser.printservice.printTab(
@@ -158,9 +290,10 @@ var jsPrintSetupService = {
       }
     } // if call in message
     return Promise.resolve("nothing was done");  
-  }, // ifaceListener
+  } // ifaceListener
+
   // printservice event listeners
-  stateListener: function (data) {
+  function stateListener(data) {
 //    console.log("stateListener", data);
     var sending = browser.tabs.sendMessage(
       data.tabId,              // integer
@@ -172,8 +305,10 @@ var jsPrintSetupService = {
       },// any
       {frameId: data.frameId}  // optional object
     );  
-  }, // stateListener
-  progressListener: function (data) {
+  }
+  
+  // stateListener
+  function progressListener(data) {
     //console.log("progressListener", data);
     var sending = browser.tabs.sendMessage(
       data.tabId,              // integer
@@ -187,8 +322,9 @@ var jsPrintSetupService = {
       },// any
       {frameId: data.frameId}  // optional object
     );  
-  }, // progressListener
-  statusListener: function (data) {
+  }
+  // progressListener
+  function statusListener(data) {
     //console.log("statusListener", data);
     var sending = browser.tabs.sendMessage(
       data.tabId,              // integer
@@ -201,11 +337,26 @@ var jsPrintSetupService = {
       {frameId: data.frameId}  // optional object
     );  
   } //statusListener
+  
+  function init() {
+    // load settings
+    readSettings();
+    browser.storage.onChanged.addListener(storageListener);
+    // jsprintsetup-iface listener
+    browser.runtime.onMessage.addListener(ifaceListener);
+    // printservice event listeners
+    browser.printservice.onStateChange.addListener(stateListener);
+    browser.printservice.onProgressChange.addListener(progressListener);
+    browser.printservice.onStatusChange.addListener(statusListener);
+  } // init
+  
+  init();
+  console.log('jsPrintSetup Services loaded');
+}// jsPrintSetupService
 
-} // jsPrintSetupService
+var jsPrintSerup = new jsPrintSetupService();
 
-console.log('jsPrintSetup Services loaded');
-jsPrintSetupService.init();
+//jsPrintSetupService.init();
 
 
 
