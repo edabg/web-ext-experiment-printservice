@@ -349,8 +349,27 @@ This method have a sense in case of `silent printing`, if is printing via print 
 # III. `jsPrintSetup` webextension.
 This extension is port of XPCOM [jsPrintSetup](https://github.com/edabg/jsprintsetup) extension to webextension, which relie on new `printservice` API.
 
-The extension in not complete, but implements all methods of `printservice` API.<br>
-The important functionality to extension which is not yet implemented is **security** as host based access control to the extension.
+The extension in not complete, but implements all methods of `printservice` API.
+
+## Security
+The important functionality of the extension is to **resctrict access** to it's features and `printService`.
+Because if that is not implemeted **every content from internet may exploit** your printers through `jsPrintSetup` extension.
+
+The first step to security is **extensions have to request `printservice` permission**.<br>
+That's mean, when user install `jsPrintSetup` extension or something other that will use `printService` it **have to allow "This extension will get access to your printers!"**
+
+After the `extension` is allowed and installed, **the extension must provide next security level**.<br>
+In case of `jsPrintSetup` extension it implements *host based access control*.<br>
+How access control is implemented.<br>
+`jsPrintSetup` store list of `allowed` and `blocked` hosts, which can be edited in `extension options page`.<br>
+When `backgrond script` receives request for *print services*, it check that host (from page script) is in list of `allowed`/`blocked` hosts.<br>
+1. If the host is `allowed` the request is processed.<br>
+2. If the host is `blocked` the request is rejected.<br>
+3. If the host is neither `allowed` or `blocked` **User must decide what to do with future requests from this host**.<br>
+In all cases when `bacground script` receive request `pageAction` button is displayed in address bar with relevant information about current **permissions of this host**.<br>
+When user click's the `pageAction` button/icon `options page` is displayed to get decision about this host.
+
+In summary the security scheme includes **permissions during installation* and **permissions on host basis**. 
 
 # IV. Test case.
 
