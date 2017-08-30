@@ -24,6 +24,7 @@ function hostAccessIface() {
     templateRow.id = "";
 //console.log(templateRow);
 
+
     var hostInput = document.getElementById("host-access-input");
 
     var self = this;
@@ -41,10 +42,15 @@ function hostAccessIface() {
             return decodeURIComponent(pair[1]);
         }
       }
+      return undefined;
     }
+
+    var qPermission = getQueryVar("perm");
+    var qScheme = getQueryVar("scheme");
+    var qHost = getQueryVar("host");
     
-    hostInput.value = getQueryVar("host");
-      
+    var pageActionMode = (qScheme || qHost);
+    
     function readSettings() {
       browser.storage.local.get(null,
         function(restoredSettings) {
@@ -179,6 +185,37 @@ function hostAccessIface() {
     document.getElementById("host-access-remove").addEventListener("click",removeHostClick,false);
     /* Add listener for click on save button */
     document.getElementById("save-button").addEventListener("click",storeSettings,false);
+
+    if (pageActionMode) {
+      document.body.className = "boxed";
+      document.getElementById("close-button").style.display = "";
+      document.getElementById("close-button").addEventListener("click",() => window.close(),false);
+      hostInput.value = getQueryVar("host");
+      // status info
+      let hostInfo = "Unknown";
+      let statusClass = "state_ask";
+      if (qScheme && qScheme.startsWith("file:"))
+        hostInfo = "Local file";
+      else 
+        hostInfo = "Host "+qHost;
+      let statusInfo = "N/A";
+console.log(qPermission);  
+      if (!qPermission || qPermission == 0) {
+        statusInfo = "%HOST_INFO% requires access to print services!";
+        statusClass = "state_ask";
+      } else if (qPermission == 1) {
+        statusInfo = "%HOST_INFO% have access to print services!";
+        statusClass = "state_ok";
+      } else {
+        statusInfo = "%HOST_INFO% have blocked to use print services!";
+        statusClass = "state_block";
+      }
+      statusInfo = statusInfo.replace("%HOST_INFO%", hostInfo);
+      let sstatus = document.getElementById("curent-host-status");
+      sstatus.className = statusClass;
+      sstatus.textContent = statusInfo;  
+    }  
+        
 
     readSettings();
 }

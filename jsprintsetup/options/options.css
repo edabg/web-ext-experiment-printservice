@@ -7,7 +7,7 @@ body {
 
 section.clear-options {
   padding: 0.5em 0;
-  margin: 1em 0;
+/*  margin: 1em 0;*/
 }
 
 #clear-button {
@@ -33,6 +33,7 @@ label:hover {
 .title {
   font-size: 1.2em;
   margin-bottom: 0.5em;
+  border-bottom: solid 1px black;
 }
 
 #options-save-status {
@@ -46,6 +47,7 @@ table.scroll {
     width: 466px; /* 300 + 150 + 16px scrollbar width */
     border-spacing: 0;
     border: 2px solid black;
+    border-collapse: collapse;
 }
 
 table.scroll tbody,
@@ -62,7 +64,7 @@ table.scroll thead th {
     border-right: 1px solid black;
 }
 table.scroll tbody tr.marked td {
-    background-color: yellow;
+    background-color: #d8d8d8;
 }
 
 table.scroll thead th.host {
@@ -81,6 +83,10 @@ table.scroll thead th:last-child {
     width: 166px; / * 150px + 16px scrollbar width * /
 }
 */
+table.scroll tbody td.permission {
+    width: 150px; /* 150px */
+}
+
 table.scroll thead tr th { 
     height: 30px;
     line-height: 30px;
@@ -95,4 +101,33 @@ table.scroll tbody td:last-child, thead th:last-child {
 
 input.host {
     width: 300px;
+}
+
+span.state_ok {
+  font-size: 1.2em;
+  border: solid 2px green;
+  padding: 5px;
+  color: green;
+}
+span.state_block {
+  font-size: 1.2em;
+  border: solid 2px red;
+  padding: 5px;
+  color: red;
+}
+span.state_ask {
+  font-size: 1.2em;
+  border: solid 2px orange;
+  padding: 5px;
+  color: orange;
+}
+span.state_hidden {
+  display: none;
+}
+/*outer div*/
+body.boxed {
+  margin: 10px;
+  padding: 8px;  
+  border: solid #888888 1px;
+  box-shadow: 8px 8px 4px #888888;
 }

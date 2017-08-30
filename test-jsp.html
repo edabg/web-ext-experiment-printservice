@@ -76,7 +76,7 @@ var printSettings = {
 
 function printWindow(win, what) {
   // jsPrintSetup messages  
-  win.addEventListener("message", function(event) {
+  function jspListener(event) {
     console.log('event.data:'+JSON.stringify(event.data));
     if (event.source == win 
         && event.data.source && event.data.source == "jsPrintSetup"
@@ -99,19 +99,27 @@ function printWindow(win, what) {
       } else if (event.data.message == "job_complete") {
         console.log(what+" Job "+event.data.jobId+" completed.");
         logResult(what+" Job "+event.data.jobId+" completed.", true);
+      } else if (event.data.message == "jsp_permission") {
+        console.log(what+" jsPrintSetup accessEnabled:"+event.data.accessEnabled+" permission:"+event.data.permission);
+        logResult(what+" jsPrintSetup accessEnabled:"+event.data.accessEnabled+" permission:"+event.data.permission, true);
       } else {
         console.log(what+" Unknown message:"+event.data.message);
         logResult(what+" Unknown message:"+event.data.message, true);
       }
     }
-  });
-  win.addEventListener("beforeprint", function(event) {
-      logResult("before print: "+what, true);
-  });
-  win.addEventListener("afterprint", function(event) {
-      logResult("after print: "+what, true);
-  });
-  // header Str Center place title
+  }
+  if (typeof(win.privListenersAdded) === "undefined") {
+    win.privListenersAdded = true;    
+    win.addEventListener("message", jspListener);
+    
+    win.addEventListener("beforeprint", function(event) {
+        logResult("before print: "+what, true);
+    });
+    win.addEventListener("afterprint", function(event) {
+        logResult("after print: "+what, true);
+    });
+  }
+    // header Str Center place title
   printSettings.headerStrLeft = '';
   printSettings.headerStrCenter = '&T';
   printSettings.headerStrRight = what;
@@ -196,10 +204,11 @@ function getDefaultPrinterName() {
 } // getDefaultPrinterName
 
 function initJsPrintSetup() {
+  jsPrintSetup.setPaperSizeUnit(jsPrintSetup.kPaperSizeMillimeters);
   jsPrintSetup.lazyInit().then(
     () => {
       logResult("Settings initialized", false);
-      logResult(JSON.stringify(jsPrintSetup.getOptions()), true);
+      logResult(JSON.stringify(jsPrintSetup.getOptions(), null, "\t"), true);
     }
     , (error) => {
       logResult(error, false);

@@ -104,24 +104,37 @@ function jsPrintSetupService() {
     browser.pageAction.setPopup(
       {
         tabId: urlInfo.tabId, 
-        popup: "options/options.html?host="+encodeURIComponent(urlInfo.URL.host)
+        popup: "options/options.html?perm="+encodeURIComponent(urlInfo.permission)+"&scheme="+encodeURIComponent(urlInfo.URL.protocol)+"&host="+encodeURIComponent(urlInfo.URL.host)
       }
     );
-    // TODO: icon change also
+
     let title = "jsPrintSetup service - host:"+urlInfo.URL.host;
-    if (urlInfo.permission == self.JSPS_ALLOW_ACTION)
+    let iconPath = "icons/jsps.png";
+    if (urlInfo.permission == self.JSPS_ALLOW_ACTION) {
       title = title + " HAVE ACCESS to your printers!";
-    else if (urlInfo.permission == self.JSPS_DENY_ACTION) 
+      iconPath = "icons/jsps.png";
+    } else if (urlInfo.permission == self.JSPS_DENY_ACTION) { 
       title = title + " is BLOCKED to use your printers!";
-    else
+      iconPath = "icons/jsps-disabled.png";
+    } else {
       title = title + " REQUESTED to use your printers!";
+      iconPath = "icons/jsps-ask.png";
+    }
     browser.pageAction.setTitle(
       {
         tabId: urlInfo.tabId, 
         title: title
       }
     );
+    // change icon also
+    browser.pageAction.setIcon(
+      {
+        tabId: urlInfo.tabId,
+        path: iconPath
+      }
+    ); 
     browser.pageAction.show(urlInfo.tabId);
+    // TODO: When browser.pageAction.openPopup will be available call it in case of ask
 
     // show notification in case of request or block
     if (!urlInfo.accessEnabled) {
@@ -143,6 +156,7 @@ function jsPrintSetupService() {
 		let url_ = null;
 		try {
 		  url_ = new URL(sender.url);
+//		  url_ = new URL("https://ala.bala.com");
 			if (url_.protocol.startsWith("file:")) {
 				// local file
 				permission = self.settings.localFilesEnabled?self.JSPS_ALLOW_ACTION:self.JSPS_DENY_ACTION; 
@@ -183,7 +197,17 @@ function jsPrintSetupService() {
     
     showPageAction(urlInfo);
     
-		// TODO: send permission info message content script
+		// send permission info message content script
+    let sending = browser.tabs.sendMessage(
+      sender.tab.id,              // integer
+      {
+        message:"jsp_permission",
+        accessEnabled: urlInfo.accessEnabled,
+        permission: urlInfo.permission
+      },// any
+      {frameId: sender.frameId}  // optional object
+    );  
+		
 		return urlInfo;
   }  
   

@@ -55,5 +55,10 @@
   
   "jsp_Saved": {
     "message": "Saved"
+  },
+
+  "jsp_Close": {
+    "message": "Close"
   }
+
 }

@@ -20,76 +20,12 @@
 var Ci = Components.interfaces;
 
 let IPS = Ci.nsIPrintSettings;
+//TODO: remove Components.interfaces and define constants as numerics
 
-//console.log("jsPrintSetup iface loaded")
-
-function jsPrintSetupException(message) {
+function jsPrintSetupException(message, type="common") {
    this.message = message;
-   this.name = 'jsPrintSetupException';
-}
-
-// Supported Print Settings
-const PRINT_SETTINGS_FIELDS = {
-  printerName :"printerName",
-  orientation : "orientation",
-  scaling : "scaling",
-  shrinkToFit : "shrinkToFit",
-  printBGColors : "printBGColors",
-  printBGImages : "printBGImages",
-  printInColor : "printInColor",
-  printReversed : "printReversed",
-  printSilent : "printSilent",
-  showPrintProgress : "showPrintProgress",
-  printToFile : "printToFile",
-  toFileName : "toFileName",
-  resolution : "resolution",
-  printPageDelay : "printPageDelay",
-  duplex : "duplex",
-  numCopies : "numCopies",
-  howToEnableFrameUI : "howToEnableFrameUI",
-  printFrameTypeUsage : "printFrameTypeUsage",
-  printFrameType : "printFrameType",
-  printRange : "printRange",
-  startPageRange : "startPageRange",
-  endPageRange : "endPageRange",
-  paperName : "paperName",
-  paperData : "paperData",
-  paperSizeUnit : "paperSizeUnit",
-  paperWidth : "paperWidth",
-  paperHeight : "paperHeight",
-  outputFormat : "outputFormat",
-  title : "title",
-  docURL: "docURL",
-  headerStrLeft : "headerStrLeft",
-  headerStrCenter : "headerStrCenter",
-  headerStrRight : "headerStrRight",
-  footerStrLeft : "footerStrLeft",
-  footerStrCenter : "footerStrCenter",
-  footerStrRight : "footerStrRight",
-  unwriteableMarginLeft : "unwriteableMarginLeft",
-  unwriteableMarginRight : "unwriteableMarginRight",
-  unwriteableMarginTop : "unwriteableMarginTop",
-  unwriteableMarginBottom : "unwriteableMarginBottom",
-  edgeLeft : "edgeLeft",
-  edgeRight : "edgeRight",
-  edgeTop : "edgeTop",
-  edgeBottom : "edgeBottom",
-  marginLeft : "marginLeft",
-  marginRight : "marginRight",
-  marginTop : "marginTop",
-  marginBottom : "marginBottom"
-};
-
-function assignPrintSettings(dstPrintSettings, srcPrintSettings) {
-  if (typeof srcPrintSettings !== 'object') {
-    throw new jsPrintSetupException('Ivalid argument srcPrintSettings');
-  } 
-  if (typeof dstPrintSettings !== 'object' || dstPrintSettings === null) 
-    dstPrintSettings = {}; 
-  for (let field of Object.keys(PRINT_SETTINGS_FIELDS)) {
-    if ((field in srcPrintSettings) && (srcPrintSettings[field] != null))
-      dstPrintSettings[PRINT_SETTINGS_FIELDS[field]] = srcPrintSettings[field];
-  }
+   this.name = 'jsPrintSetupServiceException';
+   this.type = type;
 }
 
 // print job list 
@@ -211,6 +147,14 @@ var wrappedJSObjectHelper = {
 function jsPrintSetupIface() {
 //  console.log("Constructor");
 
+  const JSP_VERSION = "1.0";
+  
+  const SET_TYPE_GLOBAL = "global";
+  const SET_TYPE_PRINTER = "printer";
+  
+  const ERROR_TYPE_SILENT = "silent";
+  const ERROR_TYPE_EXCEPTION = "exception";
+   
   // 'private' members
   var self = this;
 	var constants = {
@@ -289,6 +233,70 @@ function jsPrintSetupIface() {
     WPL_STATE_IS_WINDOW: Ci.nsIWebProgressListener.STATE_IS_WINDOW, // 524288
 	}; // constants
 
+  // Supported Print Settings
+  const PRINT_SETTINGS_FIELDS = {
+    printerName :"printerName",
+    orientation : "orientation",
+    scaling : "scaling",
+    shrinkToFit : "shrinkToFit",
+    printBGColors : "printBGColors",
+    printBGImages : "printBGImages",
+    printInColor : "printInColor",
+    printReversed : "printReversed",
+    printSilent : "printSilent",
+    showPrintProgress : "showPrintProgress",
+    printToFile : "printToFile",
+    toFileName : "toFileName",
+    resolution : "resolution",
+    printPageDelay : "printPageDelay",
+    duplex : "duplex",
+    numCopies : "numCopies",
+    howToEnableFrameUI : "howToEnableFrameUI",
+    printFrameTypeUsage : "printFrameTypeUsage",
+    printFrameType : "printFrameType",
+    printRange : "printRange",
+    startPageRange : "startPageRange",
+    endPageRange : "endPageRange",
+    paperName : "paperName",
+    paperData : "paperData",
+    paperSizeUnit : "paperSizeUnit",
+    paperWidth : "paperWidth",
+    paperHeight : "paperHeight",
+    outputFormat : "outputFormat",
+    title : "title",
+    docURL: "docURL",
+    headerStrLeft : "headerStrLeft",
+    headerStrCenter : "headerStrCenter",
+    headerStrRight : "headerStrRight",
+    footerStrLeft : "footerStrLeft",
+    footerStrCenter : "footerStrCenter",
+    footerStrRight : "footerStrRight",
+    unwriteableMarginLeft : "unwriteableMarginLeft",
+    unwriteableMarginRight : "unwriteableMarginRight",
+    unwriteableMarginTop : "unwriteableMarginTop",
+    unwriteableMarginBottom : "unwriteableMarginBottom",
+    edgeLeft : "edgeLeft",
+    edgeRight : "edgeRight",
+    edgeTop : "edgeTop",
+    edgeBottom : "edgeBottom",
+    marginLeft : "marginLeft",
+    marginRight : "marginRight",
+    marginTop : "marginTop",
+    marginBottom : "marginBottom"
+  };
+
+  function assignPrintSettings(dstPrintSettings, srcPrintSettings) {
+    if (typeof srcPrintSettings !== 'object') {
+      throw new jsPrintSetupException('Ivalid argument srcPrintSettings');
+    } 
+    if (typeof dstPrintSettings !== 'object' || dstPrintSettings === null) 
+      dstPrintSettings = {}; 
+    for (let field of Object.keys(PRINT_SETTINGS_FIELDS)) {
+      if ((field in srcPrintSettings) && (srcPrintSettings[field] != null))
+        dstPrintSettings[PRINT_SETTINGS_FIELDS[field]] = srcPrintSettings[field];
+    }
+  } // assignPrintSettings
+
   function _postMessage(message, msgData) {
     let msg = {"source": "jsPrintSetup", "message": message};
 //    if ((msgData !== null) && (typeof(msgData[Symbol.iterator]) === "function")) {
@@ -299,8 +307,11 @@ function jsPrintSetupIface() {
     window.postMessage(msg, "*");
   } // postMessage
   
-  function error(msg) {
-    console.log("jsPrintSetup Error: "+msg);
+  function error(msg, errorType = ERROR_TYPE_SILENT) {
+    if (errorType === ERROR_TYPE_SILENT)
+      console.log("jsPrintSetup Error: "+msg);
+    else 
+      throw new jsPrintSetupException(msg);
   } // error
 
   function checkOptionName(option) {
@@ -353,7 +364,7 @@ function jsPrintSetupIface() {
       }
     } else if (request.message == "status_change") {
 //      console.log("status change");
-      // this fires in case of error
+      // this event fires in case of error
       printJobList.error(request.jobId, request.statusMessage);
       _postMessage(
         "job_error"
@@ -362,10 +373,397 @@ function jsPrintSetupIface() {
           , "statusMessage": request.statusMessage
         }
       );
+    } else if (request.message == "jsp_permission") {
+//      console.log("permission change");
+      // relay message to page scripts
+      _postMessage(
+        "jsp_permission"
+        , {
+            accessEnabled: request.accessEnabled
+            , permission: request.permission
+        }
+      );
     }
       
     return Promise.resolve({response: "Message received"});
   } // backgroundMessageHandler
+
+  // convert value inches <-> milimeters
+  function adjustUnitValue(value, unitFrom, unitTo) {
+    if (unitFrom != unitTo) {
+      // Different Paper Size Units 
+      if (unitTo == self.kPaperSizeInches) {
+        // value is in mm -> convert to inches
+        return value / 25.4;
+      } else {
+        // value is in inches -> convert to mm
+        return value * 25.4;
+      }
+    } else {
+      return value;
+    }
+  }
+  
+  // converts string to boolean
+  function toBool(value){
+    if (typeof(value) === "boolean")
+      return value;
+    else  
+      return ((value == "true") || (value == "1")? true:false);
+  }
+  
+  // convert scaling from percent to actual unit using from mozilla and reverse
+  function scalingConvert(scaling) {
+    if (scaling < 10.0) {
+      scaling = 10.0;
+    }
+    if (scaling > 500.0) {
+      scaling = 500.0;
+    }
+    scaling /= 100.0;
+    return scaling;
+  }
+
+  function scalingConvertR(scaling) {
+    return scaling*100;
+  }  
+  
+  // Converts settings from client to service
+  function convertSettings(settings, settingType, errorType) {
+    let isGlobal = (settingType === SET_TYPE_GLOBAL);
+    let cSettings = {};
+    for(let option in settings) {
+      let value = settings[option];
+      switch(option) {
+        case "orientation":
+          if ((value == self.kPortraitOrientation) || (value == self.kLandscapeOrientation))
+            cSettings.orientation = value;
+          else {
+            error("Invalid paper orientation! Valid values are jsPrintSetup.kPortraitOrientation and jsPrintSetup.kLandscapeOrientation.", errorType);
+          }
+          break;
+        // Margins are always in inches 
+        // The margins define the positioning of the content on the page.
+        // They"re treated as an offset from the "unwriteable margin"
+        // (described below).
+        case "marginTop":
+          cSettings.marginTop = adjustUnitValue(value, self.paperSizeUnit, self.kPaperSizeInches);
+          break;
+        case "marginLeft":
+          cSettings.marginLeft = adjustUnitValue(value, self.paperSizeUnit, self.kPaperSizeInches);
+          break;
+        case "marginRight":
+          cSettings.marginRight = adjustUnitValue(value, self.paperSizeUnit, self.kPaperSizeInches);
+          break;
+        case "marginBottom":
+          cSettings.marginBottom = adjustUnitValue(value, self.paperSizeUnit, self.kPaperSizeInches);
+          break;
+        // The edge measurements (in inches) define the positioning of the headers
+        // and footers on the page. They"re measured as an offset from
+        // the "unwriteable margin" (described below).
+        case "edgeTop":
+          cSettings.edgeTop = adjustUnitValue(value, self.paperSizeUnit, self.kPaperSizeInches);
+          break;
+        case "edgeLeft":
+          cSettings.edgeLeft = adjustUnitValue(value, self.paperSizeUnit, self.kPaperSizeInches);
+          break;
+        case "edgeBottom":
+          cSettings.edgeBottom = adjustUnitValue(value, self.paperSizeUnit, self.kPaperSizeInches);
+          break;
+        case "edgeRight":
+          cSettings.edgeRight = adjustUnitValue(value, self.paperSizeUnit, self.kPaperSizeInches);
+          break;
+  			// The unwriteable margin (in inches) defines the printable region of the paper, creating
+        // an invisible border from which the edge and margin attributes are measured.
+        case "unwriteableMarginTop":
+          cSettings.unwriteableMarginTop = adjustUnitValue(value, self.paperSizeUnit, self.kPaperSizeInches);
+          break;
+        case "unwriteableMarginLeft":
+          cSettings.unwriteableMarginLeft = adjustUnitValue(value, self.paperSizeUnit, self.kPaperSizeInches);
+          break;
+        case "unwriteableMarginBottom":
+          cSettings.unwriteableMarginBottom = adjustUnitValue(value, self.paperSizeUnit, self.kPaperSizeInches);
+          break;
+        case "unwriteableMarginRight":
+          cSettings.unwriteableMarginRight = adjustUnitValue(value, self.paperSizeUnit, self.kPaperSizeInches);
+          break;
+        
+        // Header and footer
+        case "headerStrCenter":
+          cSettings.headerStrCenter = value;
+          break;
+        case "headerStrLeft":
+          cSettings.headerStrLeft = value;
+          break;
+        case "headerStrRight":
+          cSettings.headerStrRight = value;
+          break;
+        case "footerStrCenter":
+          cSettings.footerStrCenter = value;
+          break;
+        case "footerStrLeft":
+          cSettings.footerStrLeft = value;
+          break;
+        case "footerStrRight":
+          cSettings.footerStrRight = value;
+          break;
+        // Other	
+        case "scaling":
+          cSettings.scaling = scalingConvert(value);
+          break;
+        case "shrinkToFit":
+          cSettings.shrinkToFit = toBool(value);
+          break;
+        case "numCopies":
+          cSettings.numCopies = value;
+          break;				
+        case "outputFormat":
+          if([self.kOutputFormatNative, self.kOutputFormatPS, self.kOutputFormatPDF].indexOf(value) == -1)
+            error("Ivalid output fromat value! Valid values are jsPrintSetup.kOutputFormatNative, jsPrintSetup.kOutputFormatPS, jsPrintSetup.kOutputFormatPDF.", errorType);
+          cSettings.outputFormat = value;				
+          break;				
+        case "paperName":
+          cSettings.paperName = value;				
+          break;				
+        case "paperData":
+          cSettings.paperData = value;				
+          break;				
+        case "paperSizeType":
+          if([self.kPaperSizeNativeData, self.kPaperSizeDefined].indexOf(value) == -1)
+            error("Ivalid paper size type value! Valid values are jsPrintSetup.kPaperSizeNativeData, jsPrintSetup.kPaperSizeDefined.", errorType);
+          cSettings.paperSizeType = value;				
+          break;
+        case "paperSizeUnit":
+//          console.log("The property paperSizeUnit is readonly!");
+          cSettings.paperSizeUnit = value;				
+          break;			
+        case "paperHeight":
+          if (isGlobal) {
+        		cSettings.paperHeight = adjustUnitValue(value, self.paperSizeUnit, self.globalPrintSettings.paperSizeUnit);
+          } else {
+        		// Here must be self.printSettings.paperSizeUnit, but actualy don"t work properly
+        		// to work well we are using self.globalPrintSettings.paperSizeUnit
+        		cSettings.paperHeight = adjustUnitValue(value, self.paperSizeUnit, self.globalPrintSettings.paperSizeUnit);
+          }
+          break;				
+        case "paperWidth":
+          if (isGlobal) {
+        		cSettings.paperWidth = adjustUnitValue(value, self.paperSizeUnit, self.globalPrintSettings.paperSizeUnit);
+          } else {
+        		// Here must be self.printSettings.paperSizeUnit, but actualy don't work properly
+        		// to work well we are using self.globalPrintSettings.paperSizeUnit
+        		cSettings.paperWidth = adjustUnitValue(value, self.paperSizeUnit, self.globalPrintSettings.paperSizeUnit);
+          }
+          break;
+        case "printRange":
+          cSettings.printRange = value;				
+          break;
+        case "startPageRange":
+          cSettings.startPageRange = value;				
+          break;
+        case "endPageRange":
+          cSettings.endPageRange = value;				
+          break;
+        case "printSilent":
+          cSettings.printSilent = toBool(value);				
+          break;									
+        case "showPrintProgress":
+          cSettings.showPrintProgress = toBool(value);				
+          break;
+        case "printBGColors" :
+          cSettings.printBGColors = toBool(value);				
+          break;										
+        case "printBGImages" :
+          cSettings.printBGImages = toBool(value);				
+          break;										
+        case "duplex" :
+          cSettings.duplex = value; //?? TODO: Check is this implemented				
+          break;										
+        case "resolution" :
+          cSettings.resolution = value;				
+          break;										
+        case "title":
+          cSettings.title = value;
+          break;
+        case "printToFile" :
+          cSettings.printToFile = toBool(value);				
+          break;										
+        case "toFileName":
+          cSettings.toFileName = value;
+          break;
+        default :
+          if (option in PRINT_SETTINGS_FIELDS)
+            cSettings[option] = value;
+          else
+            error("Not supported option:"+option, errorType);
+      }
+    } // for
+    return cSettings;
+  } // convertSettings
+
+  // Converts settings from service to client
+  function convertSettingsR(settings, settingType, errorType) {
+    let isGlobal = (settingType === SET_TYPE_GLOBAL);
+    let cSettings = {};
+    for(let option in settings) {
+      let value = settings[option];
+      switch(option) {
+        case 'orientation':
+          cSettings.orientation = value;
+          break;
+        // Margins are always in inches 
+        // The margins define the positioning of the content on the page.
+        // They're treated as an offset from the "unwriteable margin"
+        // (described below).
+        case 'marginTop':
+          cSettings.marginTop = adjustUnitValue(value, self.kPaperSizeInches, self.paperSizeUnit);
+          break;
+        case 'marginLeft':
+          cSettings.marginLeft = adjustUnitValue(value, self.kPaperSizeInches, self.paperSizeUnit);
+          break;
+        case 'marginRight':
+          cSettings.marginRight = adjustUnitValue(value, self.kPaperSizeInches, self.paperSizeUnit);
+          break;
+        case 'marginBottom':
+          cSettings.marginBottom = adjustUnitValue(value, self.kPaperSizeInches, self.paperSizeUnit);
+          break;
+        // The edge measurements (in inches) define the positioning of the headers
+        // and footers on the page. They're measured as an offset from
+        // the "unwriteable margin" (described below).
+        case 'edgeTop':
+          cSettings.edgeTop = adjustUnitValue(value, self.kPaperSizeInches, self.paperSizeUnit);
+          break;
+        case 'edgeLeft':
+          cSettings.edgeLeft = adjustUnitValue(value, self.kPaperSizeInches, self.paperSizeUnit);
+          break;
+        case 'edgeBottom':
+          cSettings.edgeBottom = adjustUnitValue(value, self.kPaperSizeInches, self.paperSizeUnit);
+          break;
+        case 'edgeRight':
+          cSettings.edgeRight = adjustUnitValue(value, self.kPaperSizeInches, self.paperSizeUnit);
+          break;
+  			// The unwriteable margin (in inches) defines the printable region of the paper, creating
+        // an invisible border from which the edge and margin attributes are measured.
+        case 'unwriteableMarginTop':
+          cSettings.unwriteableMarginTop = adjustUnitValue(value, self.kPaperSizeInches, self.paperSizeUnit);
+          break;
+        case 'unwriteableMarginLeft':
+          cSettings.unwriteableMarginLeft = adjustUnitValue(value, self.kPaperSizeInches, self.paperSizeUnit);
+          break;
+        case 'unwriteableMarginBottom':
+          cSettings.unwriteableMarginBottom = adjustUnitValue(value, self.kPaperSizeInches, self.paperSizeUnit);
+          break;
+        case 'unwriteableMarginRight':
+          cSettings.unwriteableMarginRight = adjustUnitValue(value, self.kPaperSizeInches, self.paperSizeUnit);
+          break;
+        
+        // Header and footer
+        case 'headerStrCenter':
+          cSettings.headerStrCenter = value;
+          break;
+        case 'headerStrLeft':
+          cSettings.headerStrLeft = value;
+          break;
+        case 'headerStrRight':
+          cSettings.headerStrRight = value;
+          break;
+        case 'footerStrCenter':
+          cSettings.footerStrCenter = value;
+          break;
+        case 'footerStrLeft':
+          cSettings.footerStrLeft = value;
+          break;
+        case 'footerStrRight':
+          cSettings.footerStrRight = value;
+          break;
+        // Other	
+        case 'scaling':
+          cSettings.scaling = scalingConvert(value);
+          break;
+        case 'shrinkToFit':
+          cSettings.shrinkToFit = toBool(value);
+          break;
+        case 'numCopies':
+          cSettings.numCopies = value;
+          break;				
+        case 'outputFormat':
+          cSettings.outputFormat = value;				
+          break;				
+        case 'paperName':
+          cSettings.paperName = value;				
+          break;				
+        case 'paperData':
+          cSettings.paperData = value;				
+          break;				
+        case 'paperSizeType':
+          cSettings.paperSizeType = value;				
+          break;
+        case 'paperSizeUnit':
+          cSettings.paperSizeUnit = value;				
+          break;			
+        case 'paperHeight':
+          if (isGlobal) {
+        		cSettings.paperHeight = adjustUnitValue(value, self.globalPrintSettings.paperSizeUnit, self.paperSizeUnit);
+          } else {
+        		// Here must be self.printSettings.paperSizeUnit, but actualy don't work properly
+        		// to work well we are using self.globalPrintSettings.paperSizeUnit
+        		cSettings.paperHeight = adjustUnitValue(value, self.globalPrintSettings.paperSizeUnit, self.paperSizeUnit);
+          }
+          break;				
+        case 'paperWidth':
+          if (isGlobal) {
+        		cSettings.paperWidth = adjustUnitValue(value, self.globalPrintSettings.paperSizeUnit, self.paperSizeUnit);
+          } else {
+        		// Here must be self.printSettings.paperSizeUnit, but actualy don't work properly
+        		// to work well we are using self.globalPrintSettings.paperSizeUnit
+        		cSettings.paperWidth = adjustUnitValue(value, self.globalPrintSettings.paperSizeUnit, self.paperSizeUnit);
+          }
+          break;
+        case 'printRange':
+          cSettings.printRange = value;				
+          break;
+        case 'startPageRange':
+          cSettings.startPageRange = value;				
+          break;
+        case 'endPageRange':
+          cSettings.endPageRange = value;				
+          break;
+        case 'printSilent':
+          cSettings.printSilent = toBool(value);				
+          break;									
+        case 'showPrintProgress':
+          cSettings.showPrintProgress = toBool(value);				
+          break;
+        case 'printBGColors' :
+          cSettings.printBGColors = toBool(value);				
+          break;										
+        case 'printBGImages' :
+          cSettings.printBGImages = toBool(value);				
+          break;										
+        case 'duplex' :
+          cSettings.duplex = value; //?? TODO: Check is this implemented				
+          break;										
+        case 'resolution' :
+          cSettings.resolution = value;				
+          break;										
+        case 'title':
+          cSettings.title = value;
+          break;
+        case 'printToFile' :
+          cSettings.printToFile = toBool(value);				
+          break;										
+        case 'toFileName':
+          cSettings.toFileName = value;
+          break;
+        default :
+          if (option in PRINT_SETTINGS_FIELDS)
+            cSettings[option] = value;
+          else
+            error("Not supported option:"+option, errorType);
+      }
+    } // for
+    return cSettings;
+  } // convertSettingsR
   
   function init() {
     // initialize constants like properties
@@ -379,13 +777,28 @@ function jsPrintSetupIface() {
     for (var cname in constants) {
     	self[cname] = constants[cname];
     }	
+    self.paperSizeUnit = self.kPaperSizeMillimeters;
     browser.runtime.onMessage.addListener(backgroundMessageHandler);
   } 
 
   init();  
-  
-  // follow public (exported) methods
 
+
+  // follow public (exported) methods
+  this.getVersion = function() {return JSP_VERSION;}
+    
+
+	// jsPrintSetup paperSizeUnit
+	this.getPaperSizeUnit = function () {
+		return self.paperSizeUnit;
+	};
+
+	this.setPaperSizeUnit = function (aPaperSizeUnit) {
+    if ((aPaperSizeUnit != self.kPaperSizeMillimeters) && (aPaperSizeUnit != self.kPaperSizeInches))
+      throw new jsPrintSetupException("Ivalid paper size unit. Allowed values are jsPrintSetup.kPaperSizeInches and jsPrintSetup.kPaperSizeMillimeters.");    
+		self.paperSizeUnit = aPaperSizeUnit;
+  };
+  
   this.refreshOptions = function() {
     self.printSettings = {};
     self.globalPrintSettings = {};
@@ -509,51 +922,95 @@ function jsPrintSetupIface() {
     );
   }; // getPrinter
   
+  
 	this.setOption = function (option, value) {
-	  checkOptionName(option);
-	  // TODO: Option vaue adjustements
-		self.printSettings[option] = value;
+//	  checkOptionName(option);
+    let setting = convertSettings({[option]: value}, SET_TYPE_PRINTER, ERROR_TYPE_EXCEPTION);
+    if (option in setting)
+      self.printSettings[option] = setting[option]; 
 	}; // setOption
 
 	this.setGlobalOption = function (option, value) {
-	  checkOptionName(option);
-	  // TODO: Option vaue adjustements
-		self.globalPrintSettings[option] = value;
+//	  checkOptionName(option);
+    let setting = convertSettings({[option]: value}, SET_TYPE_GLOBAL, ERROR_TYPE_EXCEPTION);
+    if (option in setting)
+      self.globalPrintSettings[option] = setting[option]; 
 	}; // setGlobalOption
 
 	this.getOption = function (option) {
-	  checkOptionName(option);
-	  if (option in self.printSettings)
-      return self.printSettings[option];
-    else 
-      return undefined;	    
-	}; // getOption
+//	  checkOptionName(option);
+    if (option in self.printSettings) {
+      let setting = convertSettingsR({[option]: self.printSettings[option]}, SET_TYPE_PRINTER, ERROR_TYPE_EXCEPTION);
+      if (option in setting)
+        return setting[option]; 
+      else 
+        return undefined;
+    } else 	    
+        return undefined;
+  }; // getOption
 
 	this.getGlobalOption = function (option) {
-	  checkOptionName(option);
-	  // TODO: Option vaue adjustements
-	  if (option in self.globalPrintSettings)
-      return self.globalPrintSettings[option];
-    else 
-      return undefined;	    
+//	  checkOptionName(option);
+    if (option in self.globalPrintSettings) {
+      let setting = convertSettingsR({[option]: self.globalPrintSettings[option]}, SET_TYPE_GLOBAL, ERROR_TYPE_EXCEPTION);
+      if (option in setting)
+        return setting[option]; 
+      else 
+        return undefined;
+    } else 	    
+        return undefined;	    
 	};
 	
 	this.getOptions = function() {
-	  // TODO: Option vaue adjustements
-	  return wrappedJSObjectHelper.cloneObject(self.printSettings);
+	  return wrappedJSObjectHelper.cloneObject(convertSettingsR(self.printSettings, SET_TYPE_PRINTER, ERROR_TYPE_SILENT));
 	};
 	
 	this.getGlobalOptions = function() {
-	  // TODO: Option vaue adjustements
-	  return wrappedJSObjectHelper.cloneObject(self.globalPrintSettings);
+	  return wrappedJSObjectHelper.cloneObject(convertSettingsR(self.globalPrintSettings, SET_TYPE_GLOBAL, ERROR_TYPE_SILENT));
 	};
 	
 	this.saveOptions = function (optionSet) {
-	  // TODO:
+	  let printSettings = self.printSettings;
+    let msg = {
+      "call": "savePrintSettings"
+      , "printSettings": printSettings
+      , "optionSet": optionSet
+      , "setDefaultPrinterName": false
+    };
+    return wrappedJSObjectHelper.newPromise(
+      (resolve, reject) => {
+        browser.runtime.sendMessage(msg).then(
+          (printSettings) => {
+            resolve(wrappedJSObjectHelper.cloneObject(convertSettingsR(printSettings, SET_TYPE_PRINTER, ERROR_TYPE_SILENT)));
+          }
+          , (err) => {
+            reject(err.message);
+          }
+        );
+      }
+    );
 	};
 	
 	this.saveGlobalOptions = function (optionSet) {
-	  // TODO:
+	  let printSettings = self.globalPrintSettings;
+    let msg = {
+      "call": "savePrintSettings"
+      , "printSettings": printSettings
+      , "optionSet": optionSet
+      , "setDefaultPrinterName": false
+    };
+    return wrappedJSObjectHelper.newPromise(
+      (resolve, reject) => {
+        browser.runtime.sendMessage(msg).then(
+          (printSettings) => {
+            resolve(wrappedJSObjectHelper.cloneObject(convertSettingsR(printSettings, SET_TYPE_GLOBAL, ERROR_TYPE_SILENT)));
+          }
+          , (err) => {
+            reject(err.message);
+          }
+        );
+      }
+    );
 	};
 	
 	this.printWindow = function(win, printSettings) {
@@ -561,16 +1018,17 @@ function jsPrintSetupIface() {
 	  win.wrappedJSObject.jsPrintSetup.print(printSettings);
 	}; // printWindow
 
-	this.print = function(printSettings) {
-	  // TODO: printSettins Option vaue adjustements
-    if (typeof printSettings  === "undefined" || printSettings === null)
-      printSettings = this.printSettings;
+	this.print = function(aPrintSettings) {
+	  let printSettings;
+    if (typeof aPrintSettings  === "undefined" || aPrintSettings === null)
+      printSettings = self.printSettings;
+    else
+      printSettings = convertSettings(aPrintSettings, SET_TYPE_PRINTER, ERROR_TYPE_EXCEPTION);
     let msg = {
       "call": "printTab"
       , "printSettings": printSettings
     };
     let localJobId = printJobList.newJob();
-
     return wrappedJSObjectHelper.newPromise(
       (resolve, reject) => {
         browser.runtime.sendMessage(msg).then(
@@ -581,7 +1039,7 @@ function jsPrintSetupIface() {
               "job_submited"
               , {
                 jobId: localJobId
-              }                                 
+                }                                 
             );
             resolve(localJobId);
           }
@@ -632,7 +1090,7 @@ function jsPrintSetupIface() {
         browser.runtime.sendMessage(msg).then(
           (printSettings) => {
         	  // TODO: printSettings Option vaue adjustements
-            resolve(wrappedJSObjectHelper.cloneObject(printSettings));
+            resolve(wrappedJSObjectHelper.cloneObject(convertSettingsR(printSettings, SET_TYPE_PRINTER, ERROR_TYPE_SILENT)));
           }
           , (err) => {
             reject(err.message);
@@ -651,7 +1109,7 @@ function jsPrintSetupIface() {
         browser.runtime.sendMessage(msg).then(
           (printSettings) => {
         	  // TODO: printSettings Option vaue adjustements
-            resolve(wrappedJSObjectHelper.cloneObject(printSettings));
+            resolve(wrappedJSObjectHelper.cloneObject(convertSettingsR(printSettings, SET_TYPE_GLOBAL, ERROR_TYPE_SILENT)));
           }
           , (err) => {
             reject(err.message);
@@ -661,8 +1119,8 @@ function jsPrintSetupIface() {
     );
 	}; // getGlobalPrintSettings
 
-	this.savePrintSettings = function(printSettings, optionSet, setDefaultPrinterName) {
- 	  // TODO: printSettings Option vaue adjustements
+	this.savePrintSettings = function(aPrintSettings, optionSet, setDefaultPrinterName) {
+	  let printSettings = convertSettings(aPrintSettings, SET_TYPE_PRINTER, ERROR_TYPE_EXCEPTION);
     let msg = {
       "call": "savePrintSettings"
       , "printSettings": printSettings
@@ -708,6 +1166,23 @@ function jsPrintSetupIface() {
 	  } else 
 	   return null;
 	}; // getJobInfo
+	
+/*
+
+   // Paper size manipulation
+	short getPaperSizeUnit();
+	void setPaperSizeUnit(in short aPaperSizeUnit);
+	
+	wstring getPaperSizeList();
+	void definePaperSize(in short jspid, in short pd, in wstring pn
+								, in wstring pwg, in wstring name
+								, in double w, in double h, in short m);
+	void undefinePaperSize(in short jspid);
+	wstring getPaperSizeDataByID(in short jspid);
+	wstring getPaperSizeData();
+	void setPaperSizeData(in short jspid);
+wstring getPaperMeasure();
+*/	
 
 	this.testAsync = function() {
 //	  return new Promise((res) => {return "ala bala";});
@@ -720,6 +1195,52 @@ function jsPrintSetupIface() {
       }
     );
 	}; // testAsync
+	
+	// deprecated methods that will be removed
+	// set flag for silents print process (don't display print dialog)
+	this.setSilentPrint = function (flag) {
+	  // preferences are not accessible for extensions anymore
+	  error("'setSilentPrint' is deprecated. Use print option/setting 'printSilent'", ERROR_TYPE_EXCEPTION);
+	};
+	
+	// clear silent print always flag
+	this.clearSilentPrint = function () {
+	  // preferences are not accessible for extensions anymore
+	  error("'setSilentPrint' is deprecated. Use print option/setting 'printSilent'", ERROR_TYPE_EXCEPTION);
+	};
+	
+	// get flag for silents print process (don't display print dialog)
+	this.getSilentPrint = function () {
+	  // preferences are not accessible for extensions anymore
+	  error("'getSilentPrint' is deprecated. Use print option/setting 'printSilent'", ERROR_TYPE_EXCEPTION);
+  };
+
+  this.setShowPrintProgress = function (flag){
+	  // preferences are not accessible for extensions anymore
+	  error("'setShowPrintProgress' is deprecated. Use print option/setting 'showPrintProgress'", ERROR_TYPE_EXCEPTION);
+	};
+
+	// get flag to display print progress
+	this.getShowPrintProgress = function () {
+	  // preferences are not accessible for extensions anymore
+	  error("'getShowPrintProgress' is deprecated. Use print option/setting 'showPrintProgress'", ERROR_TYPE_EXCEPTION);
+	};
+	
+	this.setCallback = function(callback){
+	  error("'setCallback' is deprecated. Use window.addEventListener('message', (event) => {})", ERROR_TYPE_EXCEPTION);
+	};
+
+	this.getPermissions = function(){
+	  error("'getPermissions' is deprecated. Use 'checkPermissions' instead.", ERROR_TYPE_EXCEPTION);
+	};
+
+	this.askUserPermissions = function(callback){
+	  error("'askUserPermissions' is deprecated. Use 'checkPermissions' instead and window.addEventListener('message', (event) => {}).", ERROR_TYPE_EXCEPTION);
+	};
+	
+	this.setPrintProgressListener = function(aListener) {
+	  error("'setPrintProgressListener' is deprecated. Use window.addEventListener('message', (event) => {})", ERROR_TYPE_EXCEPTION);
+	};
 
 } // jsPrintSetupIface
 
