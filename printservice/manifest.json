@@ -1,0 +1,8 @@
+{
+  "manifest_version": 2,
+  "name": "Print Service API",
+  "description": "Print Service API",
+  "version": "0.1.0",
+  "applications": { "gecko": { "id": "printservice@experiments.addons.mozilla.org", "strict_min_version": "52.0" } }
+  
+}

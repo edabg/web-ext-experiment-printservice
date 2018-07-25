@@ -162,8 +162,13 @@ function hostAccessIface() {
       // delete rows
       while(tableBody.rows.length > 0) {
         tableBody.deleteRow(0);
-      }  
-      settings.accessList.forEach(function(value, key) {
+      } 
+      // display sorted by key 
+      let keys = Array.from(settings.accessList.keys()).sort();
+      console.log(keys);
+      for(let i in keys) {
+        let key = keys[i];
+        let value = settings.accessList.get(key);
         let tr = templateRow.cloneNode(true);
         let tdHost = tr.cells[0];
         let tdAccess = tr.cells[1];
@@ -176,7 +181,7 @@ function hostAccessIface() {
         tr.addEventListener("click", selectRow);
 //        console.log(tr);
         tableBody.appendChild(tr);
-      });  
+      }
     }
 
     /* Add listener for click on allow host */
@@ -199,7 +204,6 @@ function hostAccessIface() {
       else 
         hostInfo = "Host "+qHost;
       let statusInfo = "N/A";
-console.log(qPermission);  
       if (!qPermission || qPermission == 0) {
         statusInfo = "%HOST_INFO% requires access to print services!";
         statusClass = "state_ask";

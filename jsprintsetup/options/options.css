@@ -37,46 +37,46 @@ label:hover {
 }
 
 #options-save-status {
-    margin-left: 20px;
-    color: #404040;
-    visibility: hidden;
+  margin-left: 20px;
+  color: #404040;
+  visibility: hidden;
 }
 
 /* scrollable table */
 table.scroll {
-    width: 466px; /* 300 + 150 + 16px scrollbar width */
-    border-spacing: 0;
-    border: 2px solid black;
-    border-collapse: collapse;
+  width: 466px; /* 300 + 150 + 16px scrollbar width */
+  border-spacing: 0;
+  border: 2px solid black;
+  border-collapse: collapse;
 }
 
 table.scroll tbody,
 table.scroll thead tr { display: block;}
 
 table.scroll tbody {
-    height: 100px;
-    overflow-y: auto;
-    overflow-x: hidden;
+  height: 100px;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 table.scroll tbody td,
 table.scroll thead th {
-    border-right: 1px solid black;
+  border-right: 1px solid black;
 }
 table.scroll tbody tr.marked td {
-    background-color: #d8d8d8;
+  background-color: #d8d8d8;
 }
 
 table.scroll thead th.host {
-    width: 300px;
+  width: 300px;
 }
 
 table.scroll tbody td.host {
-    width: 297px; /* 300 -3px? */
+  width: 297px; /* 300 -3px? */
 }
 
 table.scroll thead th.permission {
-    width: 166px; /* 150px + 16px scrollbar width */
+  width: 166px; /* 150px + 16px scrollbar width */
 }
 /*
 table.scroll thead th:last-child {
@@ -84,23 +84,23 @@ table.scroll thead th:last-child {
 }
 */
 table.scroll tbody td.permission {
-    width: 150px; /* 150px */
+  width: 150px; /* 150px */
 }
 
 table.scroll thead tr th { 
-    height: 30px;
-    line-height: 30px;
-    /*text-align: left;*/
+  height: 30px;
+  line-height: 30px;
+  /*text-align: left;*/
 }
 
 table.scroll tbody { border-top: 2px solid black; }
 
 table.scroll tbody td:last-child, thead th:last-child {
-    border-right: none !important;
+  border-right: none !important;
 }
 
 input.host {
-    width: 300px;
+  width: 300px;
 }
 
 span.state_ok {

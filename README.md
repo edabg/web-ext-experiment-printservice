@@ -3,6 +3,8 @@
 This experiment propose new Javascript API called `printservice`.
 Web extensions can use this API to provide functionality related to print process enhacements.
 
+**Caution!** Silent printing under Linux currently (FF 63 Branch) not working See [Bug 1477909](https://bugzilla.mozilla.org/show_bug.cgi?id=1477909)
+
 # I. General.
   1. The API must provide functionality to customize print process with features like:
     - headers/footers
@@ -379,9 +381,8 @@ For testing of the implementation there is simple HTML page with two frames, whi
 
 1. You need [Firefox Developer Edition](https://www.mozilla.org/bg/firefox/developer/).
 2. Start Firefox and open new tab `about:debugging`.
-3. Load webextension experiment `printservice` as `Load Temporary Add-on` and select `/printservice/schema.json`.
-4. Load `jsPrintSetup` webextension as `Load Temporary Add-on` and select `/jsprintsetup/manifest.json`.
-5. Open new tab and open file `test-jsp.html`.
+3. Load `jsPrintSetup` webextension as `Load Temporary Add-on` and select `/jsprintsetup/manifest.json`.
+4. Open new tab and open file `test-jsp.html`.
 
 ## Explanation 
 

@@ -1,11 +1,11 @@
-																																																																																																									<html>
+<html>
  <head>
-	<meta http-equiv="content-type" content="text/html; charset=utf-8">
- 	<title>Test jsPrintSetup WE</title>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <title>Test jsPrintSetup WE</title>
 <style>
-	body {font-family:verdana,arial;font-size:10pt;background:white;} 
-	div {width:600px;border:3px solid #ccc;padding:3px;}
-	.button {
+  body {font-family:verdana,arial;font-size:10pt;background:white;} 
+  div {width:600px;border:3px solid #ccc;padding:3px;}
+  .button {
     font: bold 20px Arial;
     text-decoration: none;
     background-color: #EEEEEE;
@@ -29,7 +29,7 @@
   {
     display: none !important;
   }
-	.button {
+  .button {
     display: none !important;
   }
 } 
@@ -68,7 +68,7 @@ function checkJobInfo(what, win, jobId) {
 var printSettings = {
     "printSilent": true
 //    , "showPrintProgress": false
-//    , "outputFormat": this.kOutputFormatPDF
+//    , "outputFormat": 2 //window.jsPrintSetup.kOutputFormatPDF
 //    , "printToFile": true
 //    , "toFileName": "/home/mitko/test.pdf"
     , "printerName" : "PDF" // "Virtual_PDF_Printer"
@@ -119,7 +119,7 @@ function printWindow(win, what) {
         logResult("after print: "+what, true);
     });
   }
-    // header Str Center place title
+  // header Str Center place title
   printSettings.headerStrLeft = '';
   printSettings.headerStrCenter = '&T';
   printSettings.headerStrRight = what;
@@ -157,6 +157,8 @@ function getPrintSettings() {
     (printSettings) => {
       logResult(JSON.stringify(printSettings, null, "\t"), false);
       logResult(JSON.stringify(window.jsPrintSetup.printSettings, null, "\t"), true);
+      logResult("Options", true);
+      logResult(JSON.stringify(window.jsPrintSetup.getOptions(), null, "\t"), true);
     }
     , (error) => {
       logResult(error, false);
@@ -214,6 +216,19 @@ function initJsPrintSetup() {
       logResult(error, false);
     }
   );
+  // initialize frames
+  for(let i = 0; i < window.frames.length; i++) {
+    window.frames[i].jsPrintSetup.setPaperSizeUnit(jsPrintSetup.kPaperSizeMillimeters);
+    window.frames[i].jsPrintSetup.lazyInit().then(
+      () => {
+        logResult("Settings in frame "+(i+1)+" initialized", true);
+        logResult(JSON.stringify(window.frames[i].jsPrintSetup.getOptions(), null, "\t"), true);
+      }
+      , (error) => {
+        logResult(error, false);
+      }
+    );
+  }
 }
 function testSetGetOption() {
   jsPrintSetup.setOption("headerStrLeft", "left one");
@@ -230,31 +245,57 @@ function checkPermissions() {
     }
   );
 }
-</script>	 
+
+function defineCustomPaperSize() {
+  logResult("Define custom paper size", false);
+  jsPrintSetup.definePaperSize(101, 101, 'Custom Size 1', 'Custom Size 1', 'My Test Custom Size 1', 7.86, 2.83, jsPrintSetup.kPaperSizeInches);
+  logResult(JSON.stringify(jsPrintSetup.getPaperSizeDataByID(101), null, "\t"), true);
+}
+
+function getPaperMeasure() {
+  logResult("getPaperMeasure", false);
+  logResult(JSON.stringify(jsPrintSetup.getPaperMeasure(), null, "\t"), true);
+}
+function setPaperSizeA4() {
+  logResult("Settings paper size to A4", false);
+  jsPrintSetup.setPaperSizeData(9); // A4
+  logResult(JSON.stringify(jsPrintSetup.getPaperMeasure(), null, "\t"), true);
+}
+function setPaperSizeCustom() {
+  logResult("Settings paper size to Custom", false);
+  jsPrintSetup.setPaperSizeData(101); // Custom paper Size
+  logResult(JSON.stringify(jsPrintSetup.getPaperMeasure(), null, "\t"), true);
+}
+</script>  
 </head>
 <body>
-	<div>
+  <a class="button" href="#" OnClick="initJsPrintSetup();">Init settings</a>
+  <a class="button" href="#" OnClick="checkPermissions();">Check Permissions</a><br />
+  <div>
  The document starts here ...<br/>
  This is test<br/>
  This is test<br/>
  This is test<br/>
-	<br/><br/>
+  <br/><br/>
   <a class="button" href="#" OnClick="printWindow(window, 'Main window');">Print main window</a>
   <a class="button" href="#" OnClick="printWindow(window.frames[0], 'Frame 1');">Print frame 1</a>
   <a class="button" href="#" OnClick="printWindow(window.frames[1], 'Frame 2');">Print frame 2</a>
-	</div>
-<iframe id="if1" src="test-jsp-f1.html"> </iframe>	
-<iframe id="if2" src="test-jsp-f2.html"> </iframe>	
+  </div>
+<iframe id="if1" src="test-jsp-f1.html"> </iframe>  
+<iframe id="if2" src="test-jsp-f2.html"> </iframe>  
 <p>
   <a class="button" href="#" OnClick="getPrintersList();">Get list of printers</a>
   <a class="button" href="#" OnClick="getPrintSettings();">Get print settings</a>
   <a class="button" href="#" OnClick="getGlobalPrintSettings();">Get Global print settings</a>
   <a class="button" href="#" OnClick="getDefaultPrinterName();">Get default printer</a>
   <a class="button" href="#" OnClick="savePrintSettings();">Save print settings</a><br />
-  <a class="button" href="#" OnClick="window.jsPrintSetup.printWindow(window.frames[1], printSettings);">Print frame 2 Test</a><br />
-  <a class="button" href="#" OnClick="initJsPrintSetup();">Init settings</a>
-  <a class="button" href="#" OnClick="testSetGetOption();">Test set option</a>
-  <a class="button" href="#" OnClick="checkPermissions();">Check Permissions</a><br />
+  <a class="button" href="#" OnClick="window.jsPrintSetup.printWindow(window.frames[1], printSettings);">Print frame 2 via printWindow</a>
+  <a class="button" href="#" OnClick="testSetGetOption();">Test set option</a><br />
+  <a class="button" href="#" OnClick="defineCustomPaperSize();">Define custom paper size</a>
+  <a class="button" href="#" OnClick="getPaperMeasure();">Get paper mesure</a>
+  <a class="button" href="#" OnClick="setPaperSizeA4();">Set paper size A4</a>
+  <a class="button" href="#" OnClick="setPaperSizeCustom();">Set paper size custom</a>
+  <br />
 </p>
 <textarea id="taResult" class="console no-print" cols="100" rows="15"></textarea>
 </body>

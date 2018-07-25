@@ -14,7 +14,7 @@
 "use strict";
 
 console.log('jsPrintSetup Services is loading...');
-
+console.log("printservice:"+browser.printservice);
 function jsPrintSetupException(message, type="common") {
    this.message = message;
    this.name = 'jsPrintSetupServiceException';
@@ -28,9 +28,9 @@ function jsPrintSetupService() {
   var self = this;
   var notification = null;
 
-	this.JSPS_ALLOW_ACTION = 1;
-	this.JSPS_DENY_ACTION  = 2;
-	this.JSPS_UNKNOWN_ACTION = 0;
+  this.JSPS_ALLOW_ACTION = 1;
+  this.JSPS_DENY_ACTION  = 2;
+  this.JSPS_UNKNOWN_ACTION = 0;
 
   // default settings must be same in options page
   this.defaultSettings = {
@@ -151,53 +151,53 @@ function jsPrintSetupService() {
     }
   } // showPageAction  
   
-	function checkPermissions(sender) {
-		var permission = self.JSPS_UNKNOWN_ACTION;
-		let url_ = null;
-		try {
-		  url_ = new URL(sender.url);
-//		  url_ = new URL("https://ala.bala.com");
-			if (url_.protocol.startsWith("file:")) {
-				// local file
-				permission = self.settings.localFilesEnabled?self.JSPS_ALLOW_ACTION:self.JSPS_DENY_ACTION; 
-			} else if (url_.protocol.startsWith("http")) {
-			  if (self.settings.accessList.has(url_.host)) {
-			    let hostInfo = self.settings.accessList.get(url_.host);
-			    if (hostInfo.access == "allow")
-			     permission = self.JSPS_ALLOW_ACTION;
-			    else 
-			     permission = self.JSPS_DENY_ACTION;
-			  } else {
-  				permission = self.JSPS_UNKNOWN_ACTION;
-			  }
-			} else {
-				// usupported scheme
-				permission = self.JSPS_DENY_ACTION;
-				reportError("Unsupported scheme: "+url_.protocol);
-			}
-		} catch (err) {
-			reportError(err);	
-		  url_ = new URL("about:error");
-		}
+  function checkPermissions(sender) {
+    var permission = self.JSPS_UNKNOWN_ACTION;
+    let url_ = null;
+    try {
+      url_ = new URL(sender.url);
+//      url_ = new URL("https://ala.bala.com");
+      if (url_.protocol.startsWith("file:")) {
+        // local file
+        permission = self.settings.localFilesEnabled?self.JSPS_ALLOW_ACTION:self.JSPS_DENY_ACTION; 
+      } else if (url_.protocol.startsWith("http")) {
+        if (self.settings.accessList.has(url_.host)) {
+          let hostInfo = self.settings.accessList.get(url_.host);
+          if (hostInfo.access == "allow")
+           permission = self.JSPS_ALLOW_ACTION;
+          else 
+           permission = self.JSPS_DENY_ACTION;
+        } else {
+          permission = self.JSPS_UNKNOWN_ACTION;
+        }
+      } else {
+        // usupported scheme
+        permission = self.JSPS_DENY_ACTION;
+        reportError("Unsupported scheme: "+url_.protocol);
+      }
+    } catch (err) {
+      reportError(err); 
+      url_ = new URL("about:error");
+    }
 
-		let urlInfo = {
-		  "tabId": sender.tab.id
-		  , "URL": url_
-		  , "urlPermission": permission
-		  , "permissionission": permission
-		  , "accessEnabled": false
-		};
-		
-		// adjust permission depending security mode (TODO: "all" must be disabled!)
-		if (self.settings.securityMode == "all") { 
-		  permission = self.JSPS_ALLOW_ACTION;
+    let urlInfo = {
+      "tabId": sender.tab.id
+      , "URL": url_
+      , "urlPermission": permission
+      , "permissionission": permission
+      , "accessEnabled": false
+    };
+    
+    // adjust permission depending security mode (TODO: "all" must be disabled!)
+    if (self.settings.securityMode == "all") { 
+      permission = self.JSPS_ALLOW_ACTION;
     } 
     urlInfo.permission = permission;
-		urlInfo.accessEnabled = (permission == self.JSPS_ALLOW_ACTION);
+    urlInfo.accessEnabled = (permission == self.JSPS_ALLOW_ACTION);
     
     showPageAction(urlInfo);
     
-		// send permission info message content script
+    // send permission info message content script
     let sending = browser.tabs.sendMessage(
       sender.tab.id,              // integer
       {
@@ -207,8 +207,8 @@ function jsPrintSetupService() {
       },// any
       {frameId: sender.frameId}  // optional object
     );  
-		
-		return urlInfo;
+    
+    return urlInfo;
   }  
   
   function ifaceListener(message, sender, sendResponse) {

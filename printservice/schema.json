@@ -2,7 +2,6 @@
   {
     "namespace": "printservice",
     "description": "Print Service API",
-    "permissions": ["experiments.printservice"],
     "functions": [
       {
         "name": "hello",

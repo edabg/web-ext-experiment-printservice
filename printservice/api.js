@@ -102,7 +102,9 @@ II. The API.
 const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "EventEmitter", "resource://devtools/shared/event-emitter.js");
+Cu.import("resource://gre/modules/EventEmitter.jsm");
+//XPCOMUtils.defineLazyModuleGetter(this, "EventEmitter", "resource://devtools/shared/event-emitter.js");
+console.log("printservice begin...");
 
 /*
 Cu.import("resource://gre/modules/ExtensionUtils.jsm"); 
@@ -112,9 +114,19 @@ const {
   defineLazyGetter,
 } = ExtensionUtils;
 */
+
+
 Cu.import("resource://gre/modules/ExtensionCommon.jsm");
 Cu.import("resource://gre/modules/ExtensionUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
+
+//XPCOMUtils.defineLazyModuleGetter(this, "ExtensionUtils",
+//                                  "resource://gre/modules/ExtensionUtils.jsm");
+//XPCOMUtils.defineLazyModuleGetter(this, "ExtensionCommon",
+//                                  "resource://gre/modules/ExtensionCommon.jsm");
+//XPCOMUtils.defineLazyModuleGetter(this, "ExtensionParent",
+//                                  "resource://gre/modules/ExtensionParent.jsm");
+
 
 /*
 const {
@@ -143,6 +155,7 @@ const {
   EventManager,
 } = ExtensionCommon;
 
+//console.log(EventEmitter);
 //console.log(EventManager);
 
 let printSettingsService = Cc["@mozilla.org/gfx/printsettings-service;1"].getService(Ci.nsIPrintSettingsService);              
@@ -357,7 +370,7 @@ let progressListenerMap = {
 EventEmitter.decorate(progressListenerMap);
 //devtools.dump.emit
 
-class API extends ExtensionAPI {
+this.printservice = class extends ExtensionAPI {
   getAPI(context) {
     
     let {extension} = context;
@@ -413,16 +426,21 @@ class API extends ExtensionAPI {
                 Cu.reportError(err);
               }
               setPrintSettings(printSettings_, printSettings);
+              //printSettings_.printSilent = true;
+              //printSettings_.printToFile = false;
+              //printSettings_.printerName = "PDF";
               // get the tab
               activeTab = getTabOrActive(tabId);
-              let outerWindowID = 0;
+              let outerWindowID = 0;  
               if ((frameId == null) || (frameId == 0))
                 outerWindowID = activeTab.linkedBrowser.outerWindowID;
               else 
                 outerWindowID = frameId;
-//              consoleService.logStringMessage("tabId:"+tabId+" frameId: "+frameId);  
+//              consoleService.logStringMessage("tabId:"+tabId+" frameId: "+frameId+" outerWindowID: "+outerWindowID);  
 //              activeTab.linkedBrowser.print(frameId, printSettings, null);
               activeTab.linkedBrowser.print(outerWindowID, printSettings_, progressListenerMap.add(printJobId, getTabId(activeTab), frameId));
+//              activeTab.linkedBrowser.print(activeTab.linkedBrowser.outerWindowID, printSettings_, null);
+//              consoleService.logStringMessage("Print submitted to: "+printSettings_.printerName);  
 
 // This scenario doesn't work with frameId
 //              let contentWindow = Services.wm.getOuterWindowWithId(frameId);
@@ -570,8 +588,8 @@ class API extends ExtensionAPI {
           progressListenerMap.on("status_change", listener);
           return () => {
             progressListenerMap.off("status_change", listener);
-          };
-        }).api() // onStatusChange                
+          };// onStatusChange                
+        }).api() 
       } // printService
     };
   }
